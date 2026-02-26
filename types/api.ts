@@ -22,7 +22,7 @@ export interface TravelAgency {
 export interface Hotel {
   id: string;
   travelAgencyId: string;
-  destinationId?: string;
+  destinationId: string;
   nameAr?: string;
   nameEn?: string;
   name?: string;
@@ -31,10 +31,7 @@ export interface Hotel {
   description?: string;
   starRating?: number;
   address?: string;
-  city?: string;
-  country?: string;
-  latitude?: number;
-  longitude?: number;
+  googleMapUrl?: string;
   amenities?: string;
   status: HotelStatus;
   createdAt: string;

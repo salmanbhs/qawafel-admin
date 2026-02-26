@@ -35,11 +35,7 @@ export default function EditHotelPage({
 
   async function handleSubmit(values: HotelFormValues) {
     try {
-      const { latitude, longitude, ...rest } = values;
-      const payload: Record<string, unknown> = { ...rest };
-      if (latitude !== "" && latitude != null) payload.latitude = Number(latitude);
-      if (longitude !== "" && longitude != null) payload.longitude = Number(longitude);
-      if (payload.destinationId === "__none") delete payload.destinationId;
+      const payload: Record<string, unknown> = { ...values };
       await updateHotel.mutateAsync(payload as Partial<Hotel>);
       toast.success(t("updateSuccess"));
       router.push(`/${locale}/hotels/${id}`);

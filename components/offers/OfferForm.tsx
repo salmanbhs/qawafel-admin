@@ -107,7 +107,7 @@ export function OfferForm({
   });
 
   // Fetch destinations from global catalog
-  const { data: destData } = useDestinations({ limit: 200 });
+  const { data: destData, isLoading: destsLoading } = useDestinations({ limit: 100 });
   const destinations = destData?.data ?? [];
 
   // Watch selected destinations → filter hotels by first selected destination
@@ -115,7 +115,7 @@ export function OfferForm({
   const firstDestId = watchedDestinationIds?.[0];
 
   // Fetch hotels for this agency, optionally filtered by destination
-  const { data: hotelsData } = useHotels({
+  const { data: hotelsData, isLoading: hotelsLoading } = useHotels({
     travelAgencyId,
     limit: 100,
     ...(firstDestId ? { destinationId: firstDestId } : {}),
@@ -223,14 +223,18 @@ export function OfferForm({
                     <Button
                       variant="outline"
                       role="combobox"
+                      disabled={hotelsLoading}
                       className="w-full justify-between font-normal"
                     >
-                      <span className="truncate text-start">
-                        {selected.length === 0
+                      <span className="flex items-center gap-2 truncate text-start">
+                        {hotelsLoading && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
+                        {hotelsLoading
+                          ? tc("loading")
+                          : selected.length === 0
                           ? t("selectHotels")
                           : `${selected.length} ${tc("selected")}`}
                       </span>
-                      <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                      {!hotelsLoading && <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />}
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
@@ -246,7 +250,7 @@ export function OfferForm({
                           return (
                             <CommandItem
                               key={h.id}
-                              value={`${h.nameAr} ${h.nameEn} ${h.city} ${h.country}`}
+                              value={`${h.nameAr} ${h.nameEn} ${h.destination?.city} ${h.destination?.country}`}
                               onSelect={() => toggleHotel(h.id)}
                               className="flex items-center gap-2"
                             >
@@ -318,14 +322,18 @@ export function OfferForm({
                     <Button
                       variant="outline"
                       role="combobox"
+                      disabled={destsLoading}
                       className="w-full justify-between font-normal"
                     >
-                      <span className="truncate text-start">
-                        {selected.length === 0
+                      <span className="flex items-center gap-2 truncate text-start">
+                        {destsLoading && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
+                        {destsLoading
+                          ? tc("loading")
+                          : selected.length === 0
                           ? t("selectDestinations")
                           : `${selected.length} ${tc("selected")}`}
                       </span>
-                      <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+                      {!destsLoading && <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />}
                     </Button>
                   </FormControl>
                 </PopoverTrigger>

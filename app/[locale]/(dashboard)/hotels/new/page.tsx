@@ -28,11 +28,7 @@ export default function NewHotelPage() {
     try {
       // For agency admins, backend auto-resolves travelAgencyId from the token.
       // For system admins, travelAgencyId must be supplied in the form.
-      const { latitude, longitude, ...rest } = values;
-      const payload: Record<string, unknown> = { ...rest };
-      if (latitude !== "" && latitude != null) payload.latitude = Number(latitude);
-      if (longitude !== "" && longitude != null) payload.longitude = Number(longitude);
-      if (payload.destinationId === "__none") delete payload.destinationId;
+      const payload: Record<string, unknown> = { ...values };
       if (!isSystemAdmin) {
         delete payload.travelAgencyId;
       }

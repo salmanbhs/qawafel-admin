@@ -2,7 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch, apiDelete, apiPostForm } from "@/lib/api";
 import type { Offer, PaginatedResponse, OfferImage, ImageUploadResponse, PreUploadResponse, CreateOfferPayload, UpdateOfferPayload } from "@/types/api";
 
-export function useOffers(params?: { page?: number; limit?: number; travelAgencyId?: string }) {
+export function useOffers(params?: {
+  page?: number;
+  limit?: number;
+  travelAgencyId?: string;
+  destinationId?: string;
+  status?: string;
+  featured?: boolean;
+}) {
   return useQuery({
     queryKey: ["offers", params],
     queryFn: () =>
@@ -10,6 +17,9 @@ export function useOffers(params?: { page?: number; limit?: number; travelAgency
         page: params?.page || 1,
         limit: params?.limit || 20,
         ...(params?.travelAgencyId && { travelAgencyId: params.travelAgencyId }),
+        ...(params?.destinationId && { destinationId: params.destinationId }),
+        ...(params?.status && { status: params.status }),
+        ...(params?.featured === true && { featured: "true" }),
       }),
   });
 }

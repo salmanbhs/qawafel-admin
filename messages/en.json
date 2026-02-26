@@ -4,6 +4,7 @@
     "agencies": "Travel Agencies",
     "hotels": "Hotels",
     "offers": "Offers",
+    "myAgency": "My Agency",
     "destinations": "Destinations",
     "contactLogs": "Customer Inquiries",
     "admin": "System Admin",
@@ -137,7 +138,21 @@
     "selectDestinations": "Select destinations to include in this package",
     "searchDestinations": "Search destinations...",
     "offerImage": "Offer Image",
-    "uploading": "Uploading image..."
+    "uploading": "Uploading image...",
+    "featured": "Featured",
+    "allStatuses": "All Statuses",
+    "allAgencies": "All Agencies",
+    "allDestinations": "All Destinations",
+    "featuredOnly": "Featured only",
+    "statusPending": "Pending",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "statusActive": "Active",
+    "statusArchived": "Archived",
+    "clearFilters": "Clear filters",
+    "deleteConfirm": "Are you sure you want to delete this offer?",
+    "deleteWarning": "This will permanently remove the offer and all linked images.",
+    "deleteSuccess": "Offer deleted successfully"
   },
   "destinations": {
     "destinations": "Destinations",
@@ -323,6 +338,9 @@
     "coordinates": "Coordinates",
     "location": "Location",
     "amenities": "Amenities",
+    "amenityOther": "Other",
+    "amenityOtherPlaceholder": "e.g. Sauna, Jacuzzi, Rooftop (comma-separated)",
+    "amenitySelected": "{count} amenities selected",
     "agency": "Travel Agency",
     "status": "Status",
     "deleteConfirm": "Are you sure you want to delete this hotel?",
@@ -336,6 +354,8 @@
     "noHotelsDesc": "Get started by creating your first hotel",
     "destination": "Destination",
     "selectDestination": "Select a destination",
-    "noDestination": "No destination"
+    "noDestination": "No destination",
+    "googleMapUrl": "Google Maps URL",
+    "googleMapUrlPlaceholder": "https://maps.google.com/..."
   }
 }

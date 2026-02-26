@@ -112,14 +112,14 @@ export default function HotelDetailPage({
             </div>
           )}
 
-          {(hotel.city || hotel.country) && (
+          {(hotel.destination?.city || hotel.destination?.country) && (
             <div>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
                 {t("location")}
               </p>
               <p className="text-sm font-medium flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />
-                {[hotel.city, hotel.country].filter(Boolean).join(", ")}
+                {[hotel.destination?.city, hotel.destination?.country].filter(Boolean).join(", ")}
               </p>
             </div>
           )}
@@ -135,14 +135,20 @@ export default function HotelDetailPage({
             </div>
           )}
 
-          {hotel.latitude != null && hotel.longitude != null && (
+          {hotel.googleMapUrl && (
             <div>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                {t("coordinates")}
+                {t("googleMapUrl")}
               </p>
-              <p className="text-sm font-medium" dir="ltr">
-                {hotel.latitude}, {hotel.longitude}
-              </p>
+              <a
+                href={hotel.googleMapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-[hsl(var(--primary))] hover:underline flex items-center gap-1"
+              >
+                <MapPin className="h-3.5 w-3.5" />
+                {locale === "ar" ? "فتح في خرائط قوقل" : "Open in Google Maps"}
+              </a>
             </div>
           )}
 

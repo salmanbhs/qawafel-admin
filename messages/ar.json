@@ -4,6 +4,7 @@
     "agencies": "وكالات السفر",
     "hotels": "الفنادق",
     "offers": "العروض",
+    "myAgency": "وكالتي",
     "destinations": "الوجهات",
     "contactLogs": "استفسارات العملاء",
     "admin": "إدارة النظام",
@@ -137,7 +138,21 @@
     "selectDestinations": "اختر الوجهات لتضمينها في هذه الباقة",
     "searchDestinations": "بحث عن وجهات...",
     "offerImage": "صورة العرض",
-    "uploading": "جارٍ رفع الصورة..."
+    "uploading": "جارِي رفع الصورة...",
+    "featured": "مميز",
+    "allStatuses": "جميع الحالات",
+    "allAgencies": "جميع الوكالات",
+    "allDestinations": "جميع الوجهات",
+    "featuredOnly": "المميزة فقط",
+    "statusPending": "معلق",
+    "statusApproved": "معتمد",
+    "statusRejected": "مرفوض",
+    "statusActive": "نشط",
+    "statusArchived": "مؤرشف",
+    "clearFilters": "مسح التصفية",
+    "deleteConfirm": "هل أنت متأكد من حذف هذا العرض؟",
+    "deleteWarning": "سيتم حذف العرض وجميع الصور المرتبطة نهائياً.",
+    "deleteSuccess": "تم حذف العرض بنجاح"
   },
   "destinations": {
     "destinations": "الوجهات",
@@ -319,6 +334,9 @@
     "coordinates": "الإحداثيات",
     "location": "الموقع",
     "amenities": "المرافق",
+    "amenityOther": "أخرى",
+    "amenityOtherPlaceholder": "مثل: ساونا، جاكوزي، سطح (مفصولة بفواصل)",
+    "amenitySelected": "{count} مرفق مختار",
     "agency": "وكالة السفر",
     "status": "الحالة",
     "deleteConfirm": "هل أنت متأكد من حذف هذا الفندق؟",
@@ -332,6 +350,8 @@
     "noHotelsDesc": "ابدأ بإنشاء أول فندق",
     "destination": "الوجهة",
     "selectDestination": "اختر وجهة",
-    "noDestination": "بدون وجهة"
+    "noDestination": "بدون وجهة",
+    "googleMapUrl": "رابط خرائط قوقل",
+    "googleMapUrlPlaceholder": "https://maps.google.com/..."
   }
 }
