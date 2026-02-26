@@ -113,7 +113,7 @@ export default function OfferDetailPage() {
         </Button>
         {canEdit && (
           <div className="flex gap-2">
-            <Link href={`/${locale}/agencies/${offer.travelAgencyId}/offers/${offer.id}/edit`}>
+            <Link href={`/${locale}/offers/${offer.id}/edit`}>
               <Button size="sm" className="gap-1.5">
                 <Edit className="h-4 w-4" />
                 {tc("edit")}

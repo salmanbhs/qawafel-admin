@@ -25,29 +25,9 @@ export default async function LocaleLayout({
 
   const messages = await getMessages();
 
-  const dir = locale === "ar" ? "rtl" : "ltr";
-
   return (
-    <html lang={locale} dir={dir} suppressHydrationWarning>
-      <head>
-        {locale === "ar" && (
-          <link
-            href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap"
-            rel="stylesheet"
-          />
-        )}
-        {locale === "en" && (
-          <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-            rel="stylesheet"
-          />
-        )}
-      </head>
-      <body className="antialiased">
-        <NextIntlClientProvider messages={messages}>
-          <Providers>{children}</Providers>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <NextIntlClientProvider messages={messages} locale={locale}>
+      <Providers locale={locale}>{children}</Providers>
+    </NextIntlClientProvider>
   );
 }
