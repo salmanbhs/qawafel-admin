@@ -5,7 +5,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 const api = axios.create({
   baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
   paramsSerializer: (params) => {
     const searchParams = new URLSearchParams();
     for (const key in params) {
@@ -30,6 +29,14 @@ api.interceptors.request.use((config) => {
     // Forward Accept-Language so API returns localised field names
     const locale = localStorage.getItem("locale") || "ar";
     config.headers["Accept-Language"] = locale === "ar" ? "ar" : "en";
+
+    // For FormData, let axios auto-detect and set Content-Type with proper boundary
+    // For other requests, set JSON header
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    } else if (!config.headers["Content-Type"]) {
+      config.headers["Content-Type"] = "application/json";
+    }
   }
   return config;
 });
@@ -104,9 +111,7 @@ export async function apiDelete<T>(url: string) {
 }
 
 export async function apiPostForm<T>(url: string, form: FormData) {
-  const res = await api.post<{ success: boolean; data: T }>(url, form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const res = await api.post<{ success: boolean; data: T }>(url, form);
   return res.data.data;
 }
 
