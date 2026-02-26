@@ -26,12 +26,16 @@ export default function EditOfferPage() {
 
   const handleSubmit = async (values: OfferFormValues) => {
     try {
-      const { travelAgencyId, hotelIds, destinationIds, imageUrl, ...rest } = values;
+      const { travelAgencyId, hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, ...rest } = values;
       await updateOffer.mutateAsync({
         ...rest,
+        ...(numberOfDays !== "" && numberOfDays !== undefined ? { numberOfDays } : {}),
         ...(hotelIds !== undefined ? { hotelIds } : {}),
-        ...(destinationIds ? { destinationIds } : {}),
+        ...(destinations && destinations.length > 0 ? { destinations } : {}),
         ...(imageUrl ? { imageUrl } : {}),
+        roomOptions: roomOptions?.map(({ id, ...opt }: any) => opt),
+        ...(meals && meals.length > 0 ? { meals } : {}),
+        ...(transports && transports.length > 0 ? { transports } : {}),
       });
       toast.success(t("updated"));
       router.push(`/${locale}/agencies/${agencyId}/offers/${offerId}`);

@@ -23,7 +23,7 @@ export function useContactLogs(params?: {
 export function useContactLog(id: string) {
   return useQuery({
     queryKey: ["contact-log", id],
-    queryFn: () => apiGet<ContactLog>(`/contact-logs/${id}`),
+    queryFn: () => apiGet<ContactLog>(`/contact-logs/${id}`, {}, { "X-Raw-Response": "true" }),
     enabled: !!id,
   });
 }

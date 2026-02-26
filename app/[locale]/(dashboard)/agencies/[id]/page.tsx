@@ -182,7 +182,7 @@ export default function AgencyDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                   <StatusBadge status={offer.status} />
                   <div className="flex gap-2 shrink-0">
-                    <Link href={`/${locale}/agencies/${id}/offers/${offer.id}`}>
+                    <Link href={`/${locale}/offers/${offer.id}`}>
                       <Button variant="outline" size="sm" className="text-xs">
                         {locale === "ar" ? "عرض" : "View"}
                       </Button>

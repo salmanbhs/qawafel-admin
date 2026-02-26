@@ -83,8 +83,8 @@ api.interceptors.response.use(
 export default api;
 
 // ─── Typed helpers ────────────────────────────────────────────────────────────
-export async function apiGet<T>(url: string, params?: Record<string, unknown>) {
-  const res = await api.get<{ success: boolean; data: T }>(url, { params });
+export async function apiGet<T>(url: string, params?: Record<string, unknown>, headers?: Record<string, string>) {
+  const res = await api.get<{ success: boolean; data: T }>(url, { params, headers });
   return res.data.data;
 }
 

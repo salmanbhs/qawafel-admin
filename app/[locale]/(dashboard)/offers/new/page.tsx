@@ -54,16 +54,20 @@ export default function NewOfferPage() {
   async function handleSubmit(values: OfferFormValues) {
     if (!resolvedAgencyId) return;
     try {
-      const { hotelIds, destinationIds, imageUrl, ...rest } = values;
+      const { hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, ...rest } = values;
       const offer = await createOffer.mutateAsync({
         ...rest,
+        ...(numberOfDays !== "" && numberOfDays !== undefined ? { numberOfDays } : {}),
         travelAgencyId: resolvedAgencyId,
         ...(hotelIds && hotelIds.length > 0 ? { hotelIds } : {}),
-        ...(destinationIds && destinationIds.length > 0 ? { destinationIds } : {}),
+        ...(destinations && destinations.length > 0 ? { destinations } : {}),
         ...(imageUrl ? { imageUrl } : {}),
+        roomOptions: roomOptions.map(({ id, ...opt }: any) => opt),
+        ...(meals && meals.length > 0 ? { meals } : {}),
+        ...(transports && transports.length > 0 ? { transports } : {}),
       });
       toast.success(t("created"));
-      router.push(`/${locale}/agencies/${resolvedAgencyId}/offers/${offer.id}`);
+      router.push(`/${locale}/offers`);
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     }

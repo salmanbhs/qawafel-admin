@@ -20,7 +20,7 @@ export function useAgencies(params?: { page?: number; limit?: number }) {
 export function useAgency(id: string) {
   return useQuery({
     queryKey: ["agency", id],
-    queryFn: () => apiGet<TravelAgency>(`/travel-agencies/${id}`),
+    queryFn: () => apiGet<TravelAgency>(`/travel-agencies/${id}`, {}, { "X-Raw-Response": "true" }),
     enabled: !!id,
   });
 }

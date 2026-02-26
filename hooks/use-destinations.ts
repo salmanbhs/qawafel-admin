@@ -16,7 +16,7 @@ export function useDestinations(params?: { page?: number; limit?: number }) {
 export function useDestination(id: string) {
   return useQuery({
     queryKey: ["destination", id],
-    queryFn: () => apiGet<Destination>(`/destinations/${id}`),
+    queryFn: () => apiGet<Destination>(`/destinations/${id}`, {}, { "X-Raw-Response": "true" }),
     enabled: !!id,
   });
 }

@@ -1,7 +1,11 @@
 export type TravelAgencyStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
-export type OfferStatus = "PENDING" | "APPROVED" | "REJECTED" | "ACTIVE" | "ARCHIVED";
+export type OfferStatus = "PENDING" | "ACTIVE" | "INACTIVE" | "ARCHIVED";
 export type DestinationStatus = "PENDING" | "ACTIVE" | "ARCHIVED";
 export type HotelStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
+export type RoomType = "TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
+export type MealType = "BREAKFAST" | "LUNCH" | "DINNER" | "TEA" | "WATER";
+export type MealServiceType = "PARCEL" | "BUFFET";
+export type TransportType = "BUS" | "CAR" | "FLY" | "TRAIN";
 
 export interface TravelAgency {
   id: string;
@@ -17,6 +21,47 @@ export interface TravelAgency {
   isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RoomOption {
+  id?: string;
+  offerId?: string;
+  roomType?: RoomType | null;
+  price: number;
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Meal {
+  id?: string;
+  offerId?: string;
+  mealType: MealType;
+  serviceType?: MealServiceType | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Transport {
+  id?: string;
+  offerId?: string;
+  transportType: TransportType;
+  fromLocation: string;
+  toLocation: string;
+  isDirectFlight?: boolean | null;
+  carType?: string | null;
+  order: number;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface OfferDestination {
+  offerId?: string;
+  destinationId: string;
+  numberOfNights: number;
+  sequenceOrder: number;
+  destination: Destination;
 }
 
 export interface Hotel {
@@ -50,22 +95,28 @@ export interface Offer {
   descriptionAr?: string;
   descriptionEn?: string;
   description?: string;
-  bedCount?: number;
   checkInDate?: string;
   checkOutDate?: string;
-  price?: number;
-  maxGuests?: number;
+  numberOfDays?: number;
   currency: string;
   status: OfferStatus;
   isFeatured: boolean;
+  includesIslamicProgram?: boolean;
+  islamicAdvisor?: string;
+  includesVisa?: boolean;
+  includesInsurance?: boolean;
   dataSource?: string;
   lastImageUploadedAt?: string;
   imageCount?: number;
+  displayPrice?: number;
   createdAt: string;
   updatedAt: string;
   travelAgency?: TravelAgency;
-  hotels?: { hotel: Hotel }[];
-  destinations?: { destination: Destination }[];
+  hotels?: { offerId?: string; hotelId?: string; hotel: Hotel }[];
+  destinations?: OfferDestination[];
+  roomOptions?: RoomOption[];
+  meals?: Meal[];
+  transports?: Transport[];
 }
 
 export interface Destination {
@@ -201,22 +252,55 @@ export interface PreUploadResponse {
   optimizedSize: number;
 }
 
+export type OfferDestinationInput = {
+  destinationId: string;
+  numberOfNights: number;
+  sequenceOrder: number;
+};
+
+export type MealInput = Pick<Meal, 'mealType' | 'serviceType'>;
+export type TransportInput = Omit<Transport, 'id' | 'offerId' | 'createdAt' | 'updatedAt'>;
+export type RoomOptionInput = Omit<RoomOption, 'id' | 'offerId' | 'totalPrice' | 'createdAt' | 'updatedAt'>;
+
 export interface CreateOfferPayload {
   travelAgencyId: string;
-  hotelIds?: string[];
-  destinationIds?: string[];
-  imageUrl?: string;
   nameAr?: string;
   nameEn?: string;
   descriptionAr?: string;
   descriptionEn?: string;
-  price?: number;
-  currency?: string;
-  bedCount?: number;
-  maxGuests?: number;
+  imageUrl?: string;
   checkInDate?: string;
   checkOutDate?: string;
+  numberOfDays?: number;
   status?: OfferStatus;
+  includesIslamicProgram?: boolean;
+  islamicAdvisor?: string;
+  includesVisa?: boolean;
+  includesInsurance?: boolean;
+  hotelIds?: string[];
+  destinations?: OfferDestinationInput[];
+  roomOptions: RoomOptionInput[];
+  meals?: MealInput[];
+  transports?: TransportInput[];
 }
 
-export interface UpdateOfferPayload extends Partial<Omit<CreateOfferPayload, 'travelAgencyId'>> {}
+export interface UpdateOfferPayload {
+  nameAr?: string;
+  nameEn?: string;
+  descriptionAr?: string;
+  descriptionEn?: string;
+  imageUrl?: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  numberOfDays?: number;
+  status?: OfferStatus;
+  includesIslamicProgram?: boolean;
+  islamicAdvisor?: string;
+  includesVisa?: boolean;
+  includesInsurance?: boolean;
+  hotelIds?: string[];
+  destinations?: OfferDestinationInput[];
+  roomOptions?: RoomOptionInput[];
+  meals?: MealInput[];
+  transports?: TransportInput[];
+}

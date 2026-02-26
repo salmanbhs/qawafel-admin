@@ -35,7 +35,7 @@ export function useHotels(params?: {
 export function useHotel(id: string) {
   return useQuery({
     queryKey: ["hotel", id],
-    queryFn: () => apiGet<Hotel>(`/hotels/${id}`),
+    queryFn: () => apiGet<Hotel>(`/hotels/${id}`, {}, { "X-Raw-Response": "true" }),
     enabled: !!id,
   });
 }

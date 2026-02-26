@@ -27,7 +27,7 @@ export function useOffers(params?: {
 export function useOffer(id: string) {
   return useQuery({
     queryKey: ["offer", id],
-    queryFn: () => apiGet<Offer>(`/offers/${id}`),
+    queryFn: () => apiGet<Offer>(`/offers/${id}`, {}, { "X-Raw-Response": "true" }),
     enabled: !!id,
     retry: (count, error: unknown) => {
       // Don't retry on 404

@@ -41,18 +41,16 @@ import type { OfferStatus } from "@/types/api";
 
 const OFFER_STATUSES: OfferStatus[] = [
   "PENDING",
-  "APPROVED",
-  "REJECTED",
   "ACTIVE",
+  "INACTIVE",
   "ARCHIVED",
 ];
 
 const STATUS_KEY: Record<OfferStatus, string> = {
-  PENDING: "statusPending",
-  APPROVED: "statusApproved",
-  REJECTED: "statusRejected",
-  ACTIVE: "statusActive",
-  ARCHIVED: "statusArchived",
+  PENDING: "status_PENDING",
+  ACTIVE: "status_ACTIVE",
+  INACTIVE: "status_INACTIVE",
+  ARCHIVED: "status_ARCHIVED",
 };
 
 export default function OffersPage() {
@@ -342,9 +340,13 @@ export default function OffersPage() {
                             .join(", ")}
                         </span>
                       )}
-                      {offer.price != null && (
+                      {offer.roomOptions && offer.roomOptions.length > 0 && (
                         <span className="text-xs text-[hsl(var(--muted-foreground))]">
-                          {formatCurrency(offer.price, offer.currency, locale)}
+                          {formatCurrency(
+                            offer.roomOptions.find((r) => r.isDefault)?.price || offer.roomOptions[0].price || 0,
+                            offer.currency || "BHD",
+                            locale
+                          )}
                         </span>
                       )}
                       {offer.checkInDate && (
@@ -361,7 +363,7 @@ export default function OffersPage() {
 
                   <div className="flex gap-2 shrink-0">
                     <Link
-                      href={`/${locale}/agencies/${offer.travelAgencyId}/offers/${offer.id}`}
+                      href={`/${locale}/offers/${offer.id}`}
                     >
                       <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                         <Eye className="h-3.5 w-3.5" />
