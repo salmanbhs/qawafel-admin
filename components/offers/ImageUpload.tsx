@@ -28,7 +28,7 @@ export function ImageUpload({ offerId }: ImageUploadProps) {
       return;
     }
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("file", file);
     try {
       await upload.mutateAsync(formData);
       toast.success(t("imageUploaded"));

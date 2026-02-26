@@ -85,6 +85,8 @@
     "editOffer": "تعديل العرض",
     "editOfferDescription": "قم بتحديث تفاصيل باقتك السياحية",
     "createOffer": "إنشاء العرض",
+    "update": "تحديث",
+    "updateSuccess": "تم تحديث العرض بنجاح",
     "offerDetails": "تفاصيل العرض",
     "edit": "تعديل",
     "delete": "حذف",

@@ -85,6 +85,8 @@
     "editOffer": "Edit Offer",
     "editOfferDescription": "Update the details of your travel package",
     "createOffer": "Create Offer",
+    "update": "Update",
+    "updateSuccess": "Offer updated successfully",
     "offerDetails": "Offer Details",
     "edit": "Edit",
     "delete": "Delete",

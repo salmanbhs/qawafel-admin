@@ -201,7 +201,7 @@ export function OfferForm({
     if (!files || files.length === 0) return;
     const file = files[0];
     if (!file.type.startsWith("image/")) { toast.error(tc("invalidFileType")); return; }
-    const fd = new FormData(); fd.append("image", file);
+    const fd = new FormData(); fd.append("file", file);
     try {
       const result = await preUpload.mutateAsync(fd);
       form.setValue("imageUrl", result.imageUrl);

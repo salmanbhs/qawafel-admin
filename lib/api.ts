@@ -30,12 +30,14 @@ api.interceptors.request.use((config) => {
     const locale = localStorage.getItem("locale") || "ar";
     config.headers["Accept-Language"] = locale === "ar" ? "ar" : "en";
 
-    // For FormData, let axios auto-detect and set Content-Type with proper boundary
-    // For other requests, set JSON header
+    // For FormData, ensure Content-Type is not set so axios auto-detects with boundary
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
-    } else if (!config.headers["Content-Type"]) {
-      config.headers["Content-Type"] = "application/json";
+    } else {
+      // For JSON requests, explicitly set application/json
+      if (!config.headers["Content-Type"]) {
+        config.headers["Content-Type"] = "application/json";
+      }
     }
   }
   return config;
