@@ -7,16 +7,28 @@ export function useHotels(params?: {
   limit?: number;
   travelAgencyId?: string;
   destinationId?: string;
+  destinationIds?: string[];
 }) {
   return useQuery({
     queryKey: ["hotels", params],
-    queryFn: () =>
-      apiGet<PaginatedResponse<Hotel>>("/hotels", {
+    queryFn: () => {
+      const queryParams: Record<string, any> = {
         page: params?.page || 1,
         limit: params?.limit || 20,
-        ...(params?.travelAgencyId && { travelAgencyId: params.travelAgencyId }),
-        ...(params?.destinationId && { destinationId: params.destinationId }),
-      }),
+      };
+
+      // Add single destinationId if provided
+      if (params?.destinationId) {
+        queryParams.destinationId = params.destinationId;
+      }
+
+      // Add multiple destinationIds if provided
+      if (params?.destinationIds && params.destinationIds.length > 0) {
+        queryParams.destinationId = params.destinationIds;
+      }
+
+      return apiGet<PaginatedResponse<Hotel>>("/hotels", queryParams);
+    },
   });
 }
 

@@ -136,6 +136,7 @@
     "deleted": "Offer deleted",
     "destinations": "Destinations",
     "selectDestinations": "Select destinations to include in this package",
+    "selectDestinationsFirst": "Please select at least one destination first",
     "searchDestinations": "Search destinations...",
     "offerImage": "Offer Image",
     "uploading": "Uploading image...",

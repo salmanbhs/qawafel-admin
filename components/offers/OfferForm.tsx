@@ -110,15 +110,15 @@ export function OfferForm({
   const { data: destData, isLoading: destsLoading } = useDestinations({ limit: 100 });
   const destinations = destData?.data ?? [];
 
-  // Watch selected destinations → filter hotels by first selected destination
+  // Watch selected destinations → filter hotels by all selected destinations
   const watchedDestinationIds = useWatch({ control: form.control, name: "destinationIds" });
-  const firstDestId = watchedDestinationIds?.[0];
+  const hasSelectedDestinations = watchedDestinationIds && watchedDestinationIds.length > 0;
 
-  // Fetch hotels for this agency, optionally filtered by destination
+  // Fetch hotels for this agency, filtered by selected destinations
   const { data: hotelsData, isLoading: hotelsLoading } = useHotels({
     travelAgencyId,
     limit: 100,
-    ...(firstDestId ? { destinationId: firstDestId } : {}),
+    ...(hasSelectedDestinations ? { destinationIds: watchedDestinationIds } : {}),
   });
   const hotels = hotelsData?.data ?? [];
 
@@ -191,110 +191,7 @@ export function OfferForm({
           </TabsContent>
         </Tabs>
 
-        {/* Hotels searchable multi-select (filtered by first selected destination) */}
-        <FormField control={form.control} name="hotelIds" render={({ field }) => {
-          const selected: string[] = field.value || [];
-          const selectedLabels = selected
-            .map((id) => {
-              const h = hotels.find((x) => x.id === id);
-              return h ? (h.nameAr || h.nameEn || h.name) : id;
-            })
-            .filter(Boolean);
-
-          const toggleHotel = (id: string) => {
-            field.onChange(
-              selected.includes(id)
-                ? selected.filter((x) => x !== id)
-                : [...selected, id]
-            );
-          };
-
-          return (
-            <FormItem>
-              <FormLabel>{t("hotels")}</FormLabel>
-              {firstDestId && (
-                <div className="text-xs text-muted-foreground mb-2">
-                  {t("hotelsFilteredByDestination")}
-                </div>
-              )}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      disabled={hotelsLoading}
-                      className="w-full justify-between font-normal"
-                    >
-                      <span className="flex items-center gap-2 truncate text-start">
-                        {hotelsLoading && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
-                        {hotelsLoading
-                          ? tc("loading")
-                          : selected.length === 0
-                          ? t("selectHotels")
-                          : `${selected.length} ${tc("selected")}`}
-                      </span>
-                      {!hotelsLoading && <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />}
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder={t("searchHotels")} />
-                    <CommandList>
-                      <CommandEmpty>{tc("noResults")}</CommandEmpty>
-                      <CommandGroup>
-                        {hotels.map((h) => {
-                          const isSelected = selected.includes(h.id);
-                          const label = h.nameAr || h.nameEn || h.name || h.id;
-                          return (
-                            <CommandItem
-                              key={h.id}
-                              value={`${h.nameAr} ${h.nameEn} ${h.destination?.city} ${h.destination?.country}`}
-                              onSelect={() => toggleHotel(h.id)}
-                              className="flex items-center gap-2"
-                            >
-                              <Check
-                                className={cn(
-                                  "h-4 w-4 shrink-0",
-                                  isSelected ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <span className="flex-1 truncate">{label}</span>
-                              {h.starRating && (
-                                <span className="text-xs text-amber-500 shrink-0">
-                                  {"★".repeat(h.starRating)}
-                                </span>
-                              )}
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {selectedLabels.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {selectedLabels.map((label, i) => (
-                    <Badge
-                      key={selected[i]}
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => toggleHotel(selected[i])}
-                    >
-                      {label}
-                      <X className="ms-1 h-3 w-3" />
-                    </Badge>
-                  ))}
-                </div>
-              )}
-              <FormMessage />
-            </FormItem>
-          );
-        }} />
-
-        {/* Destinations searchable multi-select */}
+        {/* Destinations searchable multi-select — FIRST */}
         <FormField control={form.control} name="destinationIds" render={({ field }) => {
           const selected: string[] = field.value || [];
           const selectedLabels = selected
@@ -337,7 +234,7 @@ export function OfferForm({
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0" align="start">
+                <PopoverContent className="w-[400px] p-0" align="start" side="top" sideOffset={8}>
                   <Command>
                     <CommandInput placeholder={t("searchDestinations")} />
                     <CommandList>
@@ -390,6 +287,115 @@ export function OfferForm({
             </FormItem>
           );
         }} />
+
+        {/* Hotels searchable multi-select (filtered by selected destinations) */}
+        {!hasSelectedDestinations ? (
+          <div className="rounded-md border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted))] px-4 py-3 text-sm text-[hsl(var(--muted-foreground))]">
+            {t("selectDestinationsFirst")}
+          </div>
+        ) : (
+          <FormField control={form.control} name="hotelIds" render={({ field }) => {
+            const selected: string[] = field.value || [];
+            const selectedLabels = selected
+              .map((id) => {
+                const h = hotels.find((x) => x.id === id);
+                return h ? (h.nameAr || h.nameEn || h.name) : id;
+              })
+              .filter(Boolean);
+
+            const toggleHotel = (id: string) => {
+              field.onChange(
+                selected.includes(id)
+                  ? selected.filter((x) => x !== id)
+                  : [...selected, id]
+              );
+            };
+
+            return (
+              <FormItem>
+                <FormLabel>{t("hotels")}</FormLabel>
+                {hasSelectedDestinations && (
+                  <div className="text-xs text-muted-foreground mb-2">
+                    {t("hotelsFilteredByDestination")}
+                  </div>
+                )}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        disabled={hotelsLoading || !hasSelectedDestinations}
+                        className="w-full justify-between font-normal"
+                      >
+                        <span className="flex items-center gap-2 truncate text-start">
+                          {hotelsLoading && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
+                          {hotelsLoading
+                            ? tc("loading")
+                            : selected.length === 0
+                            ? t("selectHotels")
+                            : `${selected.length} ${tc("selected")}`}
+                        </span>
+                        {!hotelsLoading && <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />}
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start" side="top" sideOffset={8}>
+                    <Command>
+                      <CommandInput placeholder={t("searchHotels")} />
+                      <CommandList>
+                        <CommandEmpty>{tc("noResults")}</CommandEmpty>
+                        <CommandGroup>
+                          {hotels.map((h) => {
+                            const isSelected = selected.includes(h.id);
+                            const label = h.nameAr || h.nameEn || h.name || h.id;
+                            return (
+                              <CommandItem
+                                key={h.id}
+                                value={`${h.nameAr} ${h.nameEn} ${h.destination?.city} ${h.destination?.country}`}
+                                onSelect={() => toggleHotel(h.id)}
+                                className="flex items-center gap-2"
+                              >
+                                <Check
+                                  className={cn(
+                                    "h-4 w-4 shrink-0",
+                                    isSelected ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span className="flex-1 truncate">{label}</span>
+                                {h.starRating && (
+                                  <span className="text-xs text-amber-500 shrink-0">
+                                    {"★".repeat(h.starRating)}
+                                  </span>
+                                )}
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {selectedLabels.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {selectedLabels.map((label, i) => (
+                      <Badge
+                        key={selected[i]}
+                        variant="secondary"
+                        className="cursor-pointer"
+                        onClick={() => toggleHotel(selected[i])}
+                      >
+                        {label}
+                        <X className="ms-1 h-3 w-3" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <FormMessage />
+              </FormItem>
+            );
+          }} />
+        )}
 
         {/* Image pre-upload */}
         <Card>

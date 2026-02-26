@@ -26,13 +26,7 @@ export default function NewHotelPage() {
 
   async function handleSubmit(values: HotelFormValues) {
     try {
-      // For agency admins, backend auto-resolves travelAgencyId from the token.
-      // For system admins, travelAgencyId must be supplied in the form.
       const payload: Record<string, unknown> = { ...values };
-      if (!isSystemAdmin) {
-        delete payload.travelAgencyId;
-      }
-
       const hotel = await createHotel.mutateAsync(payload as Partial<Hotel>);
       toast.success(t("createSuccess"));
       router.push(`/${locale}/hotels/${hotel.id}`);
@@ -67,7 +61,6 @@ export default function NewHotelPage() {
             isLoading={createHotel.isPending}
             submitLabel={t("create")}
             isSystemAdmin={isSystemAdmin}
-            travelAgencyId={user?.travelAgencyId || undefined}
           />
         </CardContent>
       </Card>

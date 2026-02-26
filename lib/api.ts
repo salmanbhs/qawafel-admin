@@ -6,6 +6,19 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
+  paramsSerializer: (params) => {
+    const searchParams = new URLSearchParams();
+    for (const key in params) {
+      const value = params[key];
+      if (Array.isArray(value)) {
+        // For arrays, add multiple params with the same key: key=val1&key=val2
+        value.forEach((v) => searchParams.append(key, String(v)));
+      } else if (value !== null && value !== undefined) {
+        searchParams.set(key, String(value));
+      }
+    }
+    return searchParams.toString();
+  },
 });
 
 // ─── Request interceptor — attach access token ───────────────────────────────

@@ -70,13 +70,16 @@ const schema = z
     address: z.string().max(500).optional(),
     googleMapUrl: z.string().url().optional().or(z.literal("")),
     amenities: z.string().max(2000).optional(),
-    status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]),
-    travelAgencyId: z.string().uuid().optional(),
-    destinationId: z.string().uuid({ message: "Please select a destination" }),
+    status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).optional(),
+    destinationId: z.string(),
   })
   .refine((d) => d.nameAr || d.nameEn, {
     message: "At least one name is required",
     path: ["nameAr"],
+  })
+  .refine((d) => d.destinationId && d.destinationId.length > 0, {
+    message: "Please select a destination",
+    path: ["destinationId"],
   });
 
 export type HotelFormValues = z.infer<typeof schema>;
@@ -86,8 +89,6 @@ interface HotelFormProps {
   onSubmit: (values: HotelFormValues) => Promise<void>;
   isLoading?: boolean;
   submitLabel?: string;
-  /** Pass travelAgencyId to lock it (agency admins) */
-  travelAgencyId?: string;
   /** Show status/agency fields only for system admins */
   isSystemAdmin?: boolean;
 }
@@ -97,7 +98,6 @@ export function HotelForm({
   onSubmit,
   isLoading,
   submitLabel,
-  travelAgencyId,
   isSystemAdmin = false,
 }: HotelFormProps) {
   const t = useTranslations("hotels");
@@ -144,8 +144,7 @@ export function HotelForm({
       address: defaultValues?.address || "",
       googleMapUrl: defaultValues?.googleMapUrl || "",
       amenities: defaultValues?.amenities || "",
-      status: defaultValues?.status || "DRAFT",
-      travelAgencyId: travelAgencyId || defaultValues?.travelAgencyId || "",
+      status: defaultValues?.status || undefined,
       destinationId: defaultValues?.destinationId || "",
     },
   });
@@ -293,7 +292,7 @@ export function HotelForm({
               <FormLabel>{t("destination")}</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value || undefined}
+                value={field.value || ""}
                 disabled={destsLoading}
               >
                 <FormControl>
