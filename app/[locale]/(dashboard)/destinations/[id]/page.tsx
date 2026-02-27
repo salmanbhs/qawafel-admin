@@ -115,12 +115,6 @@ export default function DestinationDetailPage({ params }: { params: Promise<{ id
             <span className="text-sm text-muted-foreground">{t("status")}</span>
             <StatusBadge status={destination.status} />
           </div>
-          {destination.country && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{t("country")}</span>
-              <span>{destination.country}</span>
-            </div>
-          )}
           {destination.region && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t("region")}</span>

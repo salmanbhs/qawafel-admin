@@ -202,9 +202,9 @@ export default function OfferDetailPage() {
                     <div className="font-medium text-sm">
                       {idx + 1}. {dest.destination.nameAr || dest.destination.nameEn || dest.destination.name}
                     </div>
-                    {(dest.destination.city || dest.destination.country) && (
+                    {dest.destination.city && (
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {[dest.destination.city, dest.destination.country].filter(Boolean).join(", ")}
+                        {dest.destination.city}
                       </p>
                     )}
                   </div>

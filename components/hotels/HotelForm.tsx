@@ -311,7 +311,6 @@ export function HotelForm({
                   {destinations.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
                       {d.nameAr || d.nameEn || d.name}
-                      {d.country ? ` — ${d.country}` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -322,9 +321,9 @@ export function HotelForm({
                 if (!sel) return null;
                 return (
                   <div className="mt-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted))] px-3 py-2 text-sm space-y-0.5">
-                    {(sel.city || sel.country) && (
+                    {sel.city && (
                       <p className="font-medium">
-                        {[sel.city, sel.country].filter(Boolean).join(", ")}
+                        {sel.city}
                       </p>
                     )}
                     {sel.latitude != null && sel.longitude != null && (

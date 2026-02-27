@@ -111,10 +111,10 @@ export default function DestinationsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  {(dest.city || dest.country) && (
+                  {(dest.city || dest.region) && (
                     <p className="text-xs text-[hsl(var(--muted-foreground))] mb-2 truncate">
                       <MapPin className="inline h-3 w-3 me-1" />
-                      {[dest.city, dest.region, dest.country].filter(Boolean).join(", ")}
+                      {[dest.city, dest.region].filter(Boolean).join(", ")}
                     </p>
                   )}
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">

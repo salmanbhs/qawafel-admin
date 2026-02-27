@@ -8,6 +8,7 @@ import {
   Building2,
   Package,
   MapPin,
+  Globe,
   MessageSquare,
   Users,
   ClipboardList,
@@ -102,6 +103,11 @@ export function Sidebar({ onClose }: SidebarProps) {
       href: `/${locale}/destinations`,
       label: t("destinations"),
       icon: MapPin,
+    },
+    {
+      href: `/${locale}/packages`,
+      label: t("packages"),
+      icon: Globe,
     },
     {
       href: `/${locale}/admin/users`,

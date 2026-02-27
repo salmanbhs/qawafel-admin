@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
-import { Loader2 } from "lucide-react";
+import { Loader2, X, Upload } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useUploadAgencyIcon, useUploadAgencyBanner } from "@/hooks/use-agencies";
+import { getApiErrorMessage } from "@/lib/api";
 import type { TravelAgency } from "@/types/api";
 
 const schema = z
@@ -40,11 +43,20 @@ interface AgencyFormProps {
   onSubmit: (values: AgencyFormValues) => Promise<void>;
   isLoading?: boolean;
   submitLabel?: string;
+  agencyId?: string;
 }
 
-export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel }: AgencyFormProps) {
+export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, agencyId }: AgencyFormProps) {
   const t = useTranslations("agencies");
   const tc = useTranslations("common");
+  
+  const [iconPreview, setIconPreview] = useState<string | null>(defaultValues?.iconImageUrl || null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(defaultValues?.bannerImageUrl || null);
+  const iconInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  
+  const uploadIcon = useUploadAgencyIcon(agencyId || "");
+  const uploadBanner = useUploadAgencyBanner(agencyId || "");
 
   const form = useForm<AgencyFormValues>({
     resolver: zodResolver(schema),
@@ -57,6 +69,42 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel }: 
       status: defaultValues?.status || "DRAFT",
     },
   });
+
+  const handleIconUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !agencyId) return;
+    const file = files[0];
+    if (!file.type.startsWith("image/")) {
+      toast.error(tc("invalidFileType"));
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      await uploadIcon.mutateAsync(formData);
+      setIconPreview(URL.createObjectURL(file));
+      toast.success(t("iconUploaded"));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
+  };
+
+  const handleBannerUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !agencyId) return;
+    const file = files[0];
+    if (!file.type.startsWith("image/")) {
+      toast.error(tc("invalidFileType"));
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      await uploadBanner.mutateAsync(formData);
+      setBannerPreview(URL.createObjectURL(file));
+      toast.success(t("bannerUploaded"));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
+  };
 
   return (
     <Form {...form}>
@@ -164,6 +212,93 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel }: 
             )}
           />
         </div>
+
+        {/* Icon and Banner Upload */}
+        {agencyId && (
+          <div className="space-y-6 pt-4 border-t">
+            <div>
+              <h3 className="font-semibold mb-4">{t("images")}</h3>
+              
+              {/* Icon Upload */}
+              <div className="space-y-2 mb-6">
+                <FormLabel>{t("agencyIcon")}</FormLabel>
+                <p className="text-xs text-muted-foreground">{t("maxSize")} 5MB · {t("formats")} JPEG, PNG, WebP, GIF</p>
+                
+                {iconPreview && (
+                  <div className="relative w-32 h-32 rounded-lg border border-border overflow-hidden bg-muted flex items-center justify-center">
+                    <img src={iconPreview} alt="Icon preview" className="w-full h-full object-contain p-2" />
+                    <button
+                      type="button"
+                      onClick={() => setIconPreview(null)}
+                      className="absolute top-1 right-1 bg-destructive/80 hover:bg-destructive text-white rounded p-1 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+                
+                {!iconPreview && (
+                  <div
+                    onClick={() => iconInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 p-6 cursor-pointer transition-colors"
+                  >
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <p className="text-sm font-medium">{t("uploadIcon")}</p>
+                    <p className="text-xs text-muted-foreground">{t("orClickToUpload")}</p>
+                  </div>
+                )}
+                
+                <input
+                  ref={iconInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleIconUpload(e.target.files)}
+                  disabled={uploadIcon.isPending}
+                />
+              </div>
+
+              {/* Banner Upload */}
+              <div className="space-y-2">
+                <FormLabel>{t("agencyBanner")}</FormLabel>
+                <p className="text-xs text-muted-foreground">{t("maxSize")} 5MB · {t("formats")} JPEG, PNG, WebP, GIF</p>
+                
+                {bannerPreview && (
+                  <div className="relative w-full h-40 rounded-lg border border-border overflow-hidden bg-muted flex items-center justify-center">
+                    <img src={bannerPreview} alt="Banner preview" className="w-full h-full object-contain p-2" />
+                    <button
+                      type="button"
+                      onClick={() => setBannerPreview(null)}
+                      className="absolute top-1 right-1 bg-destructive/80 hover:bg-destructive text-white rounded p-1 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+                
+                {!bannerPreview && (
+                  <div
+                    onClick={() => bannerInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 p-6 cursor-pointer transition-colors"
+                  >
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <p className="text-sm font-medium">{t("uploadBanner")}</p>
+                    <p className="text-xs text-muted-foreground">{t("orClickToUpload")}</p>
+                  </div>
+                )}
+                
+                <input
+                  ref={bannerInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleBannerUpload(e.target.files)}
+                  disabled={uploadBanner.isPending}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
           {isLoading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}

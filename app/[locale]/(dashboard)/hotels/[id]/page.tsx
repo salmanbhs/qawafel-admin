@@ -112,14 +112,14 @@ export default function HotelDetailPage({
             </div>
           )}
 
-          {(hotel.destination?.city || hotel.destination?.country) && (
+          {hotel.destination?.city && (
             <div>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
                 {t("location")}
               </p>
               <p className="text-sm font-medium flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />
-                {[hotel.destination?.city, hotel.destination?.country].filter(Boolean).join(", ")}
+                {hotel.destination.city}
               </p>
             </div>
           )}

@@ -13,6 +13,8 @@ import {
   Eye,
   Trash2,
   MapPin,
+  Calendar,
+  Plane,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -34,6 +37,7 @@ import { Pagination } from "@/components/shared/Pagination";
 import { useOffers, useDeleteOffer } from "@/hooks/use-offers";
 import { useAgencies } from "@/hooks/use-agencies";
 import { useDestinations } from "@/hooks/use-destinations";
+import { usePackages } from "@/hooks/use-packages";
 import { useAuthStore } from "@/store/auth.store";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api";
@@ -72,12 +76,14 @@ export default function OffersPage() {
     isAgencyRole && myAgencyId ? myAgencyId : "__all"
   );
   const [destFilter, setDestFilter] = useState<string>("__all");
+  const [packageFilter, setPackageFilter] = useState<string>("__all");
   const [featuredOnly, setFeaturedOnly] = useState(false);
 
   const hasFilters =
     statusFilter !== "__all" ||
     (isAdmin && agencyFilter !== "__all") ||
     destFilter !== "__all" ||
+    packageFilter !== "__all" ||
     featuredOnly ||
     search.trim() !== "";
 
@@ -87,6 +93,7 @@ export default function OffersPage() {
     ...(statusFilter !== "__all" && { status: statusFilter }),
     ...(agencyFilter !== "__all" && { travelAgencyId: agencyFilter }),
     ...(destFilter !== "__all" && { destinationId: destFilter }),
+    ...(packageFilter !== "__all" && { packageId: packageFilter }),
     ...(featuredOnly && { featured: true }),
   });
 
@@ -108,6 +115,8 @@ export default function OffersPage() {
   const agencies = agenciesData?.data ?? [];
   const { data: destsData } = useDestinations({ limit: 100 });
   const destinations = destsData?.data ?? [];
+  const { data: packagesData } = usePackages({ limit: 100 });
+  const packagesList = packagesData?.data ?? [];
 
   const deleteOffer = useDeleteOffer();
 
@@ -124,6 +133,7 @@ export default function OffersPage() {
     setStatusFilter("__all");
     setAgencyFilter(isAgencyRole && myAgencyId ? myAgencyId : "__all");
     setDestFilter("__all");
+    setPackageFilter("__all");
     setFeaturedOnly(false);
     setSearch("");
     setPage(1);
@@ -222,7 +232,23 @@ export default function OffersPage() {
                 {destinations.map((d) => (
                   <SelectItem key={d.id} value={d.id}>
                     {d.nameAr || d.nameEn || d.name}
-                    {d.country ? ` — ${d.country}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={packageFilter}
+              onValueChange={(v) => { setPackageFilter(v); setPage(1); }}
+            >
+              <SelectTrigger className="h-8 w-48 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">{t("allPackages")}</SelectItem>
+                {packagesList.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nameAr || c.nameEn || c.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -269,9 +295,9 @@ export default function OffersPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-[72px] w-full rounded-lg" />
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-72 rounded-xl" />
               ))}
             </div>
           ) : offers.length === 0 ? (
@@ -293,102 +319,197 @@ export default function OffersPage() {
               }
             />
           ) : (
-            <div className="divide-y divide-[hsl(var(--border))]">
-              {offers.map((offer) => (
-                <div key={offer.id} className="flex items-center gap-3 py-3">
-                  <div className="h-10 w-10 shrink-0 rounded-md bg-[hsl(var(--muted))] flex items-center justify-center overflow-hidden">
-                    {offer.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={offer.imageUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <Package className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
-                    )}
-                  </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {offers.map((offer) => {
+                const defaultPrice =
+                  offer.roomOptions?.find((r) => r.isDefault)?.price ??
+                  offer.roomOptions?.[0]?.price;
+                const hasFlight = offer.transports?.some(
+                  (tr) => tr.transportType === "FLY"
+                );
+                const totalNights = offer.destinations
+                  ? offer.destinations.reduce((sum, d) => sum + (d.numberOfNights ?? 0), 0)
+                  : null;
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium truncate">
-                        {offer.nameAr || offer.nameEn || offer.name || "—"}
-                      </p>
-                      {offer.isFeatured && (
-                        <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 shrink-0" />
+                return (
+                  <Card
+                    key={offer.id}
+                    className="flex flex-col overflow-hidden hover:shadow-md transition-shadow"
+                  >
+                    {/* Banner image */}
+                    <div className="relative h-36 bg-muted flex-shrink-0">
+                      {offer.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={offer.imageUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <Package className="h-10 w-10 text-muted-foreground/30" />
+                        </div>
                       )}
+                      <div className="absolute top-2 end-2 flex items-center gap-1.5">
+                        {offer.isFeatured && (
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        )}
+                        <StatusBadge status={offer.status} />
+                      </div>
                     </div>
-                    <div className="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-                      {offer.travelAgency && (
-                        <span className="text-xs text-[hsl(var(--muted-foreground))] flex items-center gap-1">
-                          <Building2 className="h-3 w-3 shrink-0" />
-                          {offer.travelAgency.nameAr ||
-                            offer.travelAgency.nameEn ||
-                            offer.travelAgency.name}
-                        </span>
+
+                    <div className="flex flex-col flex-1 p-4 gap-3">
+                      {/* Name */}
+                      <div>
+                        <h3 className="font-semibold text-base leading-snug line-clamp-2">
+                          {offer.nameAr || offer.nameEn || offer.name || "—"}
+                        </h3>
+                        {offer.nameEn && offer.nameAr && (
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate dir-ltr">
+                            {offer.nameEn}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 text-sm">
+                        {/* Agency */}
+                        {offer.travelAgency && (
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="truncate text-muted-foreground">
+                              {offer.travelAgency.nameAr ||
+                                offer.travelAgency.nameEn ||
+                                offer.travelAgency.name}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Destinations */}
+                        {offer.destinations && offer.destinations.length > 0 && (
+                          <div className="flex items-start gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                            <span className="leading-snug">
+                              {offer.destinations
+                                .map(
+                                  (d) =>
+                                    d.destination.nameAr ||
+                                    d.destination.nameEn ||
+                                    d.destination.name
+                                )
+                                .join(" · ")}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Dates + nights */}
+                        {(offer.checkInDate || offer.numberOfDays) && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="text-muted-foreground">
+                              {offer.checkInDate &&
+                                formatDate(offer.checkInDate, locale)}
+                              {offer.checkOutDate &&
+                                ` → ${formatDate(offer.checkOutDate, locale)}`}
+                              {(totalNights ?? offer.numberOfDays) ? (
+                                <span className="ms-1.5 text-xs font-medium text-foreground">
+                                  ({totalNights ?? offer.numberOfDays}{" "}
+                                  {locale === "ar" ? "ليلة" : "nights"})
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Price */}
+                        {defaultPrice != null && (
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-lg font-bold">
+                              {formatCurrency(
+                                defaultPrice,
+                                offer.currency || "BHD",
+                                locale
+                              )}
+                            </span>
+                            {offer.roomOptions && offer.roomOptions.length > 1 && (
+                              <span className="text-xs text-muted-foreground">
+                                {locale === "ar"
+                                  ? `+ ${offer.roomOptions.length - 1} خيارات`
+                                  : `+ ${offer.roomOptions.length - 1} option${offer.roomOptions.length - 1 !== 1 ? "s" : ""}`}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Flight badge */}
+                      {hasFlight && (
+                        <div className="flex items-center gap-2 rounded-md bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 px-3 py-1.5">
+                          <Plane className="h-4 w-4 shrink-0" />
+                          <span className="text-sm font-medium">
+                            {locale === "ar" ? "يشمل رحلة طيران" : "Includes flight"}
+                          </span>
+                        </div>
                       )}
-                      {offer.destinations && offer.destinations.length > 0 && (
-                        <span className="text-xs text-[hsl(var(--muted-foreground))] flex items-center gap-1">
-                          <MapPin className="h-3 w-3 shrink-0" />
-                          {offer.destinations
-                            .map(
-                              (d) =>
-                                d.destination.nameAr ||
-                                d.destination.nameEn ||
-                                d.destination.name
-                            )
-                            .join(", ")}
-                        </span>
-                      )}
-                      {offer.roomOptions && offer.roomOptions.length > 0 && (
-                        <span className="text-xs text-[hsl(var(--muted-foreground))]">
-                          {formatCurrency(
-                            offer.roomOptions.find((r) => r.isDefault)?.price || offer.roomOptions[0].price || 0,
-                            offer.currency || "BHD",
-                            locale
+
+                      {/* Inclusions chips */}
+                      {(offer.includesVisa ||
+                        offer.includesInsurance ||
+                        offer.includesIslamicProgram) && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {offer.includesVisa && (
+                            <Badge variant="secondary" className="text-xs">
+                              {locale === "ar" ? "تأشيرة" : "Visa"}
+                            </Badge>
                           )}
-                        </span>
+                          {offer.includesInsurance && (
+                            <Badge variant="secondary" className="text-xs">
+                              {locale === "ar" ? "تأمين" : "Insurance"}
+                            </Badge>
+                          )}
+                          {offer.includesIslamicProgram && (
+                            <Badge variant="secondary" className="text-xs">
+                              {locale === "ar" ? "برنامج ديني" : "Islamic Program"}
+                            </Badge>
+                          )}
+                        </div>
                       )}
-                      {offer.checkInDate && (
-                        <span className="text-xs text-[hsl(var(--muted-foreground))]">
-                          {formatDate(offer.checkInDate, locale)}
-                          {offer.checkOutDate &&
-                            ` → ${formatDate(offer.checkOutDate, locale)}`}
-                        </span>
-                      )}
-                    </div>
-                  </div>
 
-                  <StatusBadge status={offer.status} />
+                      {/* Spacer */}
+                      <div className="flex-1" />
 
-                  <div className="flex gap-2 shrink-0">
-                    <Link
-                      href={`/${locale}/offers/${offer.id}`}
-                    >
-                      <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                        <Eye className="h-3.5 w-3.5" />
-                        {locale === "ar" ? "عرض" : "View"}
-                      </Button>
-                    </Link>
-                    {(isAdmin || offer.travelAgencyId === myAgencyId) && (
-                      <ConfirmDialog
-                        title={t("deleteConfirm")}
-                        description={t("deleteWarning")}
-                        onConfirm={() => handleDelete(offer.id)}
-                        trigger={
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-3 border-t mt-1">
+                        <Link href={`/${locale}/offers/${offer.id}`} className="flex-1">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-[hsl(var(--destructive))]"
+                            className="w-full gap-1.5"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Eye className="h-3.5 w-3.5" />
+                            {locale === "ar" ? "عرض" : "View"}
                           </Button>
-                        }
-                      />
-                    )}
-                  </div>
-                </div>
-              ))}
+                        </Link>
+                        {(isAdmin || offer.travelAgencyId === myAgencyId) && (
+                          <ConfirmDialog
+                            title={t("deleteConfirm")}
+                            description={t("deleteWarning")}
+                            onConfirm={() => handleDelete(offer.id)}
+                            trigger={
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            }
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
 

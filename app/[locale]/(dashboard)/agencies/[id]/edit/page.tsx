@@ -63,6 +63,7 @@ export default function EditAgencyPage({ params }: { params: Promise<{ id: strin
               onSubmit={handleSubmit}
               isLoading={updateAgency.isPending}
               submitLabel={t("saveChanges")}
+              agencyId={id}
             />
           </CardContent>
         </Card>

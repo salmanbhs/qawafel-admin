@@ -114,9 +114,9 @@ export default function HotelsPage() {
                       ))}
                     </div>
                   )}
-                  {(hotel.destination?.city || hotel.destination?.country) && (
+                  {hotel.destination?.city && (
                     <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1 truncate">
-                      {[hotel.destination?.city, hotel.destination?.country].filter(Boolean).join(", ")}
+                      {hotel.destination.city}
                     </p>
                   )}
                   {hotel.travelAgency && (

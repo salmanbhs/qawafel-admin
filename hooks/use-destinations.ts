@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
-import type { Destination, PaginatedResponse } from "@/types/api";
+import { apiGet, apiPost, apiPatch, apiDelete, apiPostForm } from "@/lib/api";
+import type { Destination, PaginatedResponse, DestinationImageUploadResponse } from "@/types/api";
 
 export function useDestinations(params?: { page?: number; limit?: number }) {
   return useQuery({
@@ -47,5 +47,19 @@ export function useDeleteDestination() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["destinations"] });
     },
+  });
+}
+
+export function useUploadDestinationIcon() {
+  return useMutation({
+    mutationFn: (formData: FormData) =>
+      apiPostForm<DestinationImageUploadResponse>("/destinations/upload-icon", formData),
+  });
+}
+
+export function useUploadDestinationBanner() {
+  return useMutation({
+    mutationFn: (formData: FormData) =>
+      apiPostForm<DestinationImageUploadResponse>("/destinations/upload-banner", formData),
   });
 }

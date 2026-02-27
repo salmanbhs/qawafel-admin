@@ -7,6 +7,7 @@ export function useOffers(params?: {
   limit?: number;
   travelAgencyId?: string;
   destinationId?: string;
+  packageId?: string;
   status?: string;
   featured?: boolean;
 }) {
@@ -18,6 +19,7 @@ export function useOffers(params?: {
         limit: params?.limit || 20,
         ...(params?.travelAgencyId && { travelAgencyId: params.travelAgencyId }),
         ...(params?.destinationId && { destinationId: params.destinationId }),
+        ...(params?.packageId && { packageId: params.packageId }),
         ...(params?.status && { status: params.status }),
         ...(params?.featured === true && { featured: "true" }),
       }),

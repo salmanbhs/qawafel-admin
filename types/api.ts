@@ -1,4 +1,5 @@
 export type TravelAgencyStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+export type PackageStatus = "ACTIVE" | "INACTIVE";
 export type OfferStatus = "PENDING" | "ACTIVE" | "INACTIVE" | "ARCHIVED";
 export type DestinationStatus = "PENDING" | "ACTIVE" | "ARCHIVED";
 export type HotelStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
@@ -17,11 +18,12 @@ export interface TravelAgency {
   descriptionEn?: string;
   description?: string;
   contactEmail?: string;
+  iconImageUrl?: string;
+  bannerImageUrl?: string;
   status: TravelAgencyStatus;
   isFeatured: boolean;
   createdAt: string;
-  updatedAt: string;
-}
+  updatedAt: string;  packages?: PackageDestination[];}
 
 export interface RoomOption {
   id?: string;
@@ -119,6 +121,12 @@ export interface Offer {
   transports?: Transport[];
 }
 
+export interface PackageDestination {
+  packageId: string;
+  destinationId: string;
+  destination: Destination;
+}
+
 export interface Destination {
   id: string;
   nameAr?: string;
@@ -127,15 +135,31 @@ export interface Destination {
   descriptionAr?: string;
   descriptionEn?: string;
   description?: string;
-  country?: string;
   region?: string;
   city?: string;
   latitude?: number;
   longitude?: number;
+  iconImageUrl?: string;
+  bannerImageUrl?: string;
   status: DestinationStatus;
   isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
+  packages?: PackageDestination[];
+}
+
+export interface Package {
+  id: string;
+  nameAr?: string;
+  nameEn?: string;
+  name?: string;
+  iconImageUrl?: string;
+  bannerImageUrl?: string;
+  status: PackageStatus;
+  isFeatured: boolean;
+  createdAt: string;
+  updatedAt: string;
+  destinations?: PackageDestination[];
 }
 
 export interface ContactLog {
@@ -303,4 +327,19 @@ export interface UpdateOfferPayload {
   roomOptions?: RoomOptionInput[];
   meals?: MealInput[];
   transports?: TransportInput[];
+}
+
+export interface AgencyImageUploadResponse {
+  iconImageUrl?: string;
+  bannerImageUrl?: string;
+}
+
+export interface DestinationImageUploadResponse {
+  iconImageUrl?: string;
+  bannerImageUrl?: string;
+}
+
+export interface PackageImageUploadResponse {
+  iconImageUrl?: string;
+  bannerImageUrl?: string;
 }

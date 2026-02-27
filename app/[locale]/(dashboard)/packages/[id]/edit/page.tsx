@@ -1,9 +1,7 @@
 "use client";
 
-import { use } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useRouter, useParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,28 +9,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { DestinationForm, type DestinationFormValues } from "@/components/destinations/DestinationForm";
-import { useDestination, useUpdateDestination } from "@/hooks/use-destinations";
+import { PackageForm, type PackageFormValues } from "@/components/packages/PackageForm";
+import { usePackage, useUpdatePackage } from "@/hooks/use-packages";
 import { useAuthStore } from "@/store/auth.store";
 import { getApiErrorMessage } from "@/lib/api";
 
-export default function EditDestinationPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const t = useTranslations("destinations");
-  const tc = useTranslations("common");
-  const locale = useLocale();
+export default function EditPackagePage() {
+  const t = useTranslations("packages");
   const router = useRouter();
+  const params = useParams<{ locale: string; id: string }>();
+  const locale = params.locale;
+  const id = params.id;
+
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "SYSTEM_ADMIN";
 
-  const { data: destination, isLoading } = useDestination(id);
-  const updateDestination = useUpdateDestination(id);
+  const { data: pkg, isLoading } = usePackage(id);
+  const updatePackage = useUpdatePackage(id);
 
-  const handleSubmit = async (values: DestinationFormValues) => {
+  const handleSubmit = async (values: PackageFormValues) => {
     try {
-      await updateDestination.mutateAsync(values);
+      await updatePackage.mutateAsync(values);
       toast.success(t("updated"));
-      router.push(`/${locale}/destinations/${id}`);
+      router.push(`/${locale}/packages/${id}`);
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     }
@@ -45,10 +44,14 @@ export default function EditDestinationPage({ params }: { params: Promise<{ id: 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-96 w-full" />
       </div>
     );
+  }
+
+  if (!pkg) {
+    return <EmptyState title={t("notFound")} description={t("notFoundDesc")} />;
   }
 
   return (
@@ -57,22 +60,20 @@ export default function EditDestinationPage({ params }: { params: Promise<{ id: 
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowRight className="h-4 w-4 rtl:rotate-180" />
         </Button>
-        <h1 className="text-2xl font-bold">{t("editDestination")}</h1>
+        <h1 className="text-2xl font-bold">{t("editPackage")}</h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            {destination?.nameAr || destination?.nameEn || tc("untitled")}
-          </CardTitle>
+          <CardTitle>{t("packageDetails")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <DestinationForm
-            defaultValues={destination}
+          <PackageForm
+            defaultValues={pkg}
             onSubmit={handleSubmit}
-            isLoading={updateDestination.isPending}
-            submitLabel={t("saveChanges")}
-            destinationId={id}
+            isLoading={updatePackage.isPending}
+            submitLabel={t("update")}
+            packageId={id}
           />
         </CardContent>
       </Card>

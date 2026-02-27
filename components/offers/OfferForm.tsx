@@ -311,11 +311,11 @@ export function OfferForm({
                           {notSelected.map((dest) => (
                             <CommandItem
                               key={dest.id}
-                              value={`${dest.nameAr} ${dest.nameEn} ${dest.country} ${dest.city}`}
+                              value={`${dest.nameAr} ${dest.nameEn} ${dest.city ?? ""}`}
                               onSelect={() => addDest(dest.id)}
                             >
                               <span className="flex-1">{dest.nameAr || dest.nameEn || dest.name}</span>
-                              {dest.country && <span className="text-xs text-muted-foreground">{dest.country}</span>}
+                              {dest.city && <span className="text-xs text-muted-foreground">{dest.city}</span>}
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -419,7 +419,7 @@ export function OfferForm({
                             const isSelected = selected.includes(h.id);
                             return (
                               <CommandItem key={h.id}
-                                value={`${h.nameAr} ${h.nameEn} ${h.destination?.city} ${h.destination?.country}`}
+                                value={`${h.nameAr} ${h.nameEn} ${h.destination?.city ?? ""}`}
                                 onSelect={() => toggleHotel(h.id)} className="flex items-center gap-2">
                                 <Check className={cn("h-4 w-4 shrink-0", isSelected ? "opacity-100" : "opacity-0")} />
                                 <span className="flex-1 truncate">{h.nameAr || h.nameEn || h.name}</span>
