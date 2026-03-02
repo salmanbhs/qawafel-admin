@@ -168,9 +168,9 @@ export default function AgencyDetailPage({ params }: { params: Promise<{ id: str
                       {offer.nameAr || offer.nameEn || offer.name || "—"}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      {offer.price != null && (
+                      {offer.displayPrice != null && (
                         <span className="text-xs text-[hsl(var(--muted-foreground))]">
-                          {formatCurrency(offer.price, offer.currency, locale)}
+                          {formatCurrency(offer.displayPrice, offer.currency, locale)}
                         </span>
                       )}
                       {offer.checkInDate && (
