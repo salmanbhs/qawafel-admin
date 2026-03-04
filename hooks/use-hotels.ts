@@ -8,6 +8,7 @@ export function useHotels(params?: {
   travelAgencyId?: string;
   destinationId?: string;
   destinationIds?: string[];
+  enabled?: boolean;
 }) {
   return useQuery({
     queryKey: ["hotels", params],
@@ -29,6 +30,7 @@ export function useHotels(params?: {
 
       return apiGet<PaginatedResponse<Hotel>>("/hotels", queryParams);
     },
+    enabled: params?.enabled !== false, // Disable query by default if enabled is false
   });
 }
 

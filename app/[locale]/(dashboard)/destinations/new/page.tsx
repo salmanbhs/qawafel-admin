@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
@@ -7,11 +8,17 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { DestinationForm, type DestinationFormValues } from "@/components/destinations/DestinationForm";
 import { useCreateDestination } from "@/hooks/use-destinations";
 import { useAuthStore } from "@/store/auth.store";
 import { getApiErrorMessage } from "@/lib/api";
+import type { DestinationFormValues } from "@/components/destinations/DestinationForm";
+
+const DestinationForm = dynamic(() => import("@/components/destinations/DestinationForm").then(mod => ({ default: mod.DestinationForm })), {
+  ssr: false,
+  loading: () => <Skeleton className="h-96 w-full" />,
+});
 
 export default function NewDestinationPage() {
   const t = useTranslations("destinations");

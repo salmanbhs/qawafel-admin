@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch, apiDelete, apiPostForm } from "@/lib/api";
 import type { Package, PaginatedResponse, PackageImageUploadResponse } from "@/types/api";
 
-export function usePackages(params?: { page?: number; limit?: number }) {
+export function usePackages(params?: { page?: number; limit?: number; enabled?: boolean }) {
   return useQuery({
     queryKey: ["packages", params],
     queryFn: () =>
@@ -10,6 +10,7 @@ export function usePackages(params?: { page?: number; limit?: number }) {
         page: params?.page || 1,
         limit: params?.limit || 20,
       }),
+    enabled: params?.enabled !== false, // Disable query by default if enabled is false
   });
 }
 

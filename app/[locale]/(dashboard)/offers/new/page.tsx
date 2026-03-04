@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -17,11 +18,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OfferForm, type OfferFormValues } from "@/components/offers/OfferForm";
 import { useCreateOffer } from "@/hooks/use-offers";
 import { useAgencies } from "@/hooks/use-agencies";
 import { useAuthStore } from "@/store/auth.store";
 import { getApiErrorMessage } from "@/lib/api";
+import type { OfferFormValues } from "@/components/offers/OfferForm";
+
+const OfferForm = dynamic(() => import("@/components/offers/OfferForm").then(mod => ({ default: mod.OfferForm })), {
+  ssr: false,
+  loading: () => <Skeleton className="h-96 w-full" />,
+});
 
 export default function NewOfferPage() {
   const t = useTranslations("offers");

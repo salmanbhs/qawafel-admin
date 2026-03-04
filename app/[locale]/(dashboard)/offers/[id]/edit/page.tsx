@@ -1,16 +1,22 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { OfferForm } from "@/components/offers/OfferForm";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useOffer, useUpdateOffer } from "@/hooks/use-offers";
 import { useAuthStore } from "@/store/auth.store";
 import { getApiErrorMessage } from "@/lib/api";
 import type { UpdateOfferPayload } from "@/types/api";
+
+const OfferForm = dynamic(() => import("@/components/offers/OfferForm").then(mod => ({ default: mod.OfferForm })), {
+  ssr: false,
+  loading: () => <Skeleton className="h-96 w-full" />,
+});
 
 export default function OfferEditPage() {
   const params = useParams<{ id: string }>();

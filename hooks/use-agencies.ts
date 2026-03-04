@@ -7,7 +7,7 @@ import type {
   AgencyImageUploadResponse,
 } from "@/types/api";
 
-export function useAgencies(params?: { page?: number; limit?: number }) {
+export function useAgencies(params?: { page?: number; limit?: number; enabled?: boolean }) {
   return useQuery({
     queryKey: ["agencies", params],
     queryFn: () =>
@@ -15,6 +15,7 @@ export function useAgencies(params?: { page?: number; limit?: number }) {
         page: params?.page || 1,
         limit: params?.limit || 20,
       }),
+    enabled: params?.enabled !== false, // Disable query by default if enabled is false
   });
 }
 

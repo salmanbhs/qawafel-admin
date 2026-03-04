@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { refreshTokens } from "@/lib/auth-refresh";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 const api = axios.create({
   baseURL: BASE_URL,

@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -8,10 +9,15 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AgencyForm } from "@/components/agencies/AgencyForm";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateAgency } from "@/hooks/use-agencies";
 import { getApiErrorMessage } from "@/lib/api";
 import type { TravelAgency } from "@/types/api";
+
+const AgencyForm = dynamic(() => import("@/components/agencies/AgencyForm").then(mod => ({ default: mod.AgencyForm })), {
+  ssr: false,
+  loading: () => <Skeleton className="h-96 w-full" />,
+});
 
 export default function NewAgencyPage() {
   const t = useTranslations("agencies");
