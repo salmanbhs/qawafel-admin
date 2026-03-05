@@ -55,8 +55,8 @@ export function PackageForm({ defaultValues, onSubmit, isLoading, submitLabel, p
   const iconInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadIcon = useUploadPackageIcon();
-  const uploadBanner = useUploadPackageBanner();
+  const uploadIcon = useUploadPackageIcon(packageId || "");
+  const uploadBanner = useUploadPackageBanner(packageId || "");
 
   const form = useForm<PackageFormValues>({
     resolver: zodResolver(schema) as any,
@@ -171,7 +171,8 @@ export function PackageForm({ defaultValues, onSubmit, isLoading, submitLabel, p
           )} />
         </div>
 
-        {/* Icon and Banner Upload */}
+        {/* Icon and Banner Upload - Only show when editing */}
+        {packageId && (
         <div className="space-y-6 pt-4 border-t">
           <div>
             <h3 className="font-semibold mb-4">{t("images")}</h3>
@@ -289,6 +290,7 @@ export function PackageForm({ defaultValues, onSubmit, isLoading, submitLabel, p
               </div>
             </div>
           </div>
+        )}
 
         <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
           {isLoading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}

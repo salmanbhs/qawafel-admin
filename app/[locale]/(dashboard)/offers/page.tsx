@@ -15,6 +15,8 @@ import {
   MapPin,
   Calendar,
   Plane,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,7 +36,15 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Pagination } from "@/components/shared/Pagination";
-import { useOffers, useDeleteOffer } from "@/hooks/use-offers";
+import { ArchiveStatus } from "@/components/offers/ArchiveStatus";
+import { ArchivedOffersDialog } from "@/components/offers/ArchivedOffersDialog";
+import { AdminArchiveTools } from "@/components/offers/AdminArchiveTools";
+import { 
+  useOffers, 
+  useDeleteOffer, 
+  useArchiveOffer, 
+  useUnarchiveOffer 
+} from "@/hooks/use-offers";
 import { useAgencies } from "@/hooks/use-agencies";
 import { useDestinations } from "@/hooks/use-destinations";
 import { usePackages } from "@/hooks/use-packages";
@@ -45,15 +55,17 @@ import type { OfferStatus } from "@/types/api";
 
 const OFFER_STATUSES: OfferStatus[] = [
   "PENDING",
+  "APPROVED",
+  "REJECTED",
   "ACTIVE",
-  "INACTIVE",
   "ARCHIVED",
 ];
 
 const STATUS_KEY: Record<OfferStatus, string> = {
   PENDING: "status_PENDING",
+  APPROVED: "status_APPROVED",
+  REJECTED: "status_REJECTED",
   ACTIVE: "status_ACTIVE",
-  INACTIVE: "status_INACTIVE",
   ARCHIVED: "status_ARCHIVED",
 };
 
@@ -78,6 +90,8 @@ export default function OffersPage() {
   const [destFilter, setDestFilter] = useState<string>("__all");
   const [packageFilter, setPackageFilter] = useState<string>("__all");
   const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [archivedDialogOpen, setArchivedDialogOpen] = useState(false);
+  const [selectedOfferForArchive, setSelectedOfferForArchive] = useState<string | null>(null);
 
   const hasFilters =
     statusFilter !== "__all" ||
@@ -87,7 +101,8 @@ export default function OffersPage() {
     featuredOnly ||
     search.trim() !== "";
 
-  const { data, isLoading } = useOffers({
+  // Automatically exclude archived offers from main view unless explicitly filtered
+  const params = {
     page,
     limit: 20,
     ...(statusFilter !== "__all" && { status: statusFilter }),
@@ -95,7 +110,9 @@ export default function OffersPage() {
     ...(destFilter !== "__all" && { destinationId: destFilter }),
     ...(packageFilter !== "__all" && { packageId: packageFilter }),
     ...(featuredOnly && { featured: true }),
-  });
+  };
+
+  const { data, isLoading } = useOffers(params);
 
   const totalPages = data?.meta?.totalPages ?? 1;
   const allOffers = data?.data ?? [];
@@ -119,11 +136,33 @@ export default function OffersPage() {
   const packagesList = packagesData?.data ?? [];
 
   const deleteOffer = useDeleteOffer();
+  const archiveOffer = useArchiveOffer();
+  const unarchiveOffer = useUnarchiveOffer();
 
   async function handleDelete(id: string) {
     try {
       await deleteOffer.mutateAsync(id);
       toast.success(t("deleteSuccess"));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
+  }
+
+  async function handleArchive(id: string) {
+    try {
+      await archiveOffer.mutateAsync(id);
+      toast.success(t("offerArchived"));
+      setSelectedOfferForArchive(null);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
+  }
+
+  async function handleUnarchive(id: string) {
+    try {
+      await unarchiveOffer.mutateAsync(id);
+      toast.success(t("offerRestored"));
+      setSelectedOfferForArchive(null);
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     }
@@ -141,6 +180,13 @@ export default function OffersPage() {
 
   return (
     <div className="space-y-6">
+      {/* Admin Archive Tools */}
+      {isAdmin && (
+        <AdminArchiveTools 
+          onArchivedClick={() => setArchivedDialogOpen(true)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -478,33 +524,48 @@ export default function OffersPage() {
                       <div className="flex-1" />
 
                       {/* Actions */}
-                      <div className="flex gap-2 pt-3 border-t mt-1">
-                        <Link href={`/${locale}/offers/${offer.id}`} className="flex-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full gap-1.5"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            {locale === "ar" ? "عرض" : "View"}
-                          </Button>
-                        </Link>
-                        {(isAdmin || offer.travelAgencyId === myAgencyId) && (
-                          <ConfirmDialog
-                            title={t("deleteConfirm")}
-                            description={t("deleteWarning")}
-                            onConfirm={() => handleDelete(offer.id)}
-                            trigger={
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            }
-                          />
-                        )}
+                      <div className="flex flex-col gap-2 pt-3 border-t mt-1">
+                        <div className="flex gap-2">
+                          <Link href={`/${locale}/offers/${offer.id}`} className="flex-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full gap-1.5"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              {locale === "ar" ? "عرض" : "View"}
+                            </Button>
+                          </Link>
+                          {(isAdmin || offer.travelAgencyId === myAgencyId) && (
+                            <>
+                              {offer.status !== "ARCHIVED" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleArchive(offer.id)}
+                                  disabled={archiveOffer.isPending}
+                                  title={t("archiveOffer")}
+                                >
+                                  <Archive className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              <ConfirmDialog
+                                title={t("deleteConfirm")}
+                                description={t("deleteWarning")}
+                                onConfirm={() => handleDelete(offer.id)}
+                                trigger={
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                }
+                              />
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </Card>
@@ -524,6 +585,12 @@ export default function OffersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Archived Offers Dialog */}
+      <ArchivedOffersDialog 
+        isOpen={archivedDialogOpen}
+        onOpenChange={setArchivedDialogOpen}
+      />
     </div>
   );
 }

@@ -51,16 +51,16 @@ export function useDeleteDestination() {
   });
 }
 
-export function useUploadDestinationIcon() {
+export function useUploadDestinationIcon(destinationId: string) {
   return useMutation({
     mutationFn: (formData: FormData) =>
-      apiPostForm<DestinationImageUploadResponse>("/destinations/upload-icon", formData),
+      apiPostForm<DestinationImageUploadResponse>(`/destinations/${destinationId}/upload-icon`, formData),
   });
 }
 
-export function useUploadDestinationBanner() {
+export function useUploadDestinationBanner(destinationId: string) {
   return useMutation({
     mutationFn: (formData: FormData) =>
-      apiPostForm<DestinationImageUploadResponse>("/destinations/upload-banner", formData),
+      apiPostForm<DestinationImageUploadResponse>(`/destinations/${destinationId}/upload-banner`, formData),
   });
 }

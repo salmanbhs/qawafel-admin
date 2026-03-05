@@ -117,3 +117,72 @@ export function useDeleteOfferImage(offerId: string) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["offer-images", offerId] }); },
   });
 }
+
+// ────────── Archive Management Hooks ──────────────────────────────────────────
+
+export function useArchiveOffer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (offerId: string) => apiPatch<Offer>(`/offers/${offerId}/archive`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["offers"] });
+      qc.invalidateQueries({ queryKey: ["offer"] });
+    },
+  });
+}
+
+export function useUnarchiveOffer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (offerId: string) => apiPatch<Offer>(`/offers/${offerId}/unarchive`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["offers"] });
+      qc.invalidateQueries({ queryKey: ["offer"] });
+      qc.invalidateQueries({ queryKey: ["offers-archived"] });
+    },
+  });
+}
+
+export function useArchivedOffers(params?: {
+  page?: number;
+  limit?: number;
+  travelAgencyId?: string;
+  destinationId?: string;
+}) {
+  return useQuery({
+    queryKey: ["offers-archived", params],
+    queryFn: () =>
+      apiGet<PaginatedResponse<Offer>>("/offers/admin/archived", {
+        page: params?.page || 1,
+        limit: params?.limit || 20,
+        ...(params?.travelAgencyId && { travelAgencyId: params.travelAgencyId }),
+        ...(params?.destinationId && { destinationId: params.destinationId }),
+      }),
+  });
+}
+
+export function useAutoArchivePastOffers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiPost<{ archived: number }>("/offers/admin/archive-past-offers", {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["offers"] });
+      qc.invalidateQueries({ queryKey: ["offers-archived"] });
+    },
+  });
+}
+
+export function useDeleteOldArchivedOffers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (daysOld: number = 90) =>
+      apiPost<{ message: string; deletedOffers: number; deletedImages: number }>(
+        `/offers/admin/delete-old-archived-offers?daysOld=${daysOld}`,
+        {}
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["offers"] });
+      qc.invalidateQueries({ queryKey: ["offers-archived"] });
+    },
+  });
+}

@@ -65,8 +65,8 @@ export function DestinationForm({
   const iconInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadIcon = useUploadDestinationIcon();
-  const uploadBanner = useUploadDestinationBanner();
+  const uploadIcon = useUploadDestinationIcon(destinationId || "");
+  const uploadBanner = useUploadDestinationBanner(destinationId || "");
   const { data: packagesData } = usePackages({ limit: 100 });
   const packages = packagesData?.data ?? [];
 
@@ -237,7 +237,8 @@ export function DestinationForm({
           </div>
         )}
 
-        {/* Icon and Banner Upload */}
+        {/* Icon and Banner Upload - Only show when editing */}
+        {destinationId && (
         <div className="space-y-6 pt-4 border-t">
           <div>
             <h3 className="font-semibold mb-4">{t("images")}</h3>
@@ -354,7 +355,7 @@ export function DestinationForm({
               />
             </div>
           </div>
-        </div>
+        )}
 
         <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
           {isLoading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}

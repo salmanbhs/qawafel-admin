@@ -51,17 +51,17 @@ export function useDeletePackage() {
   });
 }
 
-export function useUploadPackageIcon() {
+export function useUploadPackageIcon(packageId: string) {
   return useMutation({
     mutationFn: (formData: FormData) =>
-      apiPostForm<PackageImageUploadResponse>("/packages/upload-icon", formData),
+      apiPostForm<PackageImageUploadResponse>(`/packages/${packageId}/upload-icon`, formData),
   });
 }
 
-export function useUploadPackageBanner() {
+export function useUploadPackageBanner(packageId: string) {
   return useMutation({
     mutationFn: (formData: FormData) =>
-      apiPostForm<PackageImageUploadResponse>("/packages/upload-banner", formData),
+      apiPostForm<PackageImageUploadResponse>(`/packages/${packageId}/upload-banner`, formData),
   });
 }
 
