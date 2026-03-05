@@ -134,6 +134,7 @@
     "applySelected": "Apply Selected",
     "extractionApplied": "Extracted data applied",
     "imageUploaded": "Image uploaded",
+    "imageUploadedWithData": "Image uploaded and form auto-filled with extracted data",
     "imageDeleted": "Image deleted",
     "deleteImage": "Delete Image",
     "deleteImageConfirm": "Are you sure you want to delete this image?",
@@ -153,6 +154,7 @@
     "selectDestinationsFirst": "Please select at least one destination first",
     "searchDestinations": "Search destinations...",
     "offerImage": "Offer Image",
+    "uploadImageToAutofill": "Upload an offer image to automatically extract and fill the form fields below",
     "uploading": "Uploading image...",
     "roomOptions": "Room Options",
     "addRoomOption": "Add Room Option",
@@ -247,7 +249,13 @@
     "deleteOldDescription": "Permanently delete all archived offers older than the specified days. This action cannot be undone.",
     "daysOldLabel": "Days Old",
     "daysOldHint": "Delete offers archived more than this many days ago",
-    "deleteOldSuccess": "Successfully deleted {count} archived offers older than {days} days"
+    "deleteOldSuccess": "Successfully deleted {count} archived offers older than {days} days",
+    "cleanupOrphaned": "Cleanup Orphaned Files",
+    "cleanupOrphanedTitle": "Cleanup Orphaned Image Files?",
+    "cleanupOrphanedDescription": "Permanently delete image files uploaded but not confirmed with an offer. Only files older than the specified hours will be deleted.",
+    "hoursOldLabel": "Hours Old",
+    "hoursOldHint": "Delete orphaned files older than this many hours (recommend 24+)",
+    "cleanupOrphanedSuccess": "Successfully deleted {count} orphaned files older than {hours} hours"
   },
   "destinations": {
     "destinations": "Destinations",

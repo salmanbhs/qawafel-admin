@@ -55,16 +55,12 @@ import type { OfferStatus } from "@/types/api";
 
 const OFFER_STATUSES: OfferStatus[] = [
   "PENDING",
-  "APPROVED",
-  "REJECTED",
   "ACTIVE",
   "ARCHIVED",
 ];
 
 const STATUS_KEY: Record<OfferStatus, string> = {
   PENDING: "status_PENDING",
-  APPROVED: "status_APPROVED",
-  REJECTED: "status_REJECTED",
   ACTIVE: "status_ACTIVE",
   ARCHIVED: "status_ARCHIVED",
 };

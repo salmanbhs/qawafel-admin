@@ -91,7 +91,21 @@ export function useUploadOfferImage(offerId: string) {
 export function usePreUploadImage() {
   return useMutation({
     mutationFn: (formData: FormData) =>
-      apiPostForm<PreUploadResponse>("/offers/pre-upload", formData),
+      apiPostForm<PreUploadResponse>("/offer-images/pre-upload", formData),
+  });
+}
+
+export function useDeletePreUploadImage() {
+  return useMutation({
+    mutationFn: (imagePath: string) =>
+      apiDelete(`/offer-images/pre-upload?path=${encodeURIComponent(imagePath)}`),
+  });
+}
+
+export function useCleanupOrphanedFiles() {
+  return useMutation({
+    mutationFn: (hoursOld: number = 24) =>
+      apiDelete(`/offer-images/cleanup-orphaned?hoursOld=${hoursOld}`),
   });
 }
 

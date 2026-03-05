@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAutoArchivePastOffers, useDeleteOldArchivedOffers } from "@/hooks/use-offers";
+import { useAutoArchivePastOffers, useDeleteOldArchivedOffers, useCleanupOrphanedFiles } from "@/hooks/use-offers";
 import { getApiErrorMessage } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 
@@ -29,10 +29,13 @@ export function AdminArchiveTools({ onArchivedClick }: AdminArchiveToolsProps) {
 
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmCleanup, setConfirmCleanup] = useState(false);
   const [daysOld, setDaysOld] = useState("90");
+  const [hoursOld, setHoursOld] = useState("24");
 
   const { mutate: autoArchive, isPending: isAutoArchiving } = useAutoArchivePastOffers();
   const { mutate: deleteOld, isPending: isDeletingOld } = useDeleteOldArchivedOffers();
+  const { mutate: cleanupOrphaned, isPending: isCleaningUp } = useCleanupOrphanedFiles();
 
   const handleAutoArchive = () => {
     autoArchive(undefined, {
@@ -63,6 +66,21 @@ export function AdminArchiveTools({ onArchivedClick }: AdminArchiveToolsProps) {
     });
   };
 
+  const handleCleanupOrphaned = () => {
+    const hours = parseInt(hoursOld) || 24;
+    cleanupOrphaned(hours, {
+      onSuccess: (data: any) => {
+        toast.success(
+          t("cleanupOrphanedSuccess", { count: data?.deletedFiles || 0, hours })
+        );
+        setConfirmCleanup(false);
+      },
+      onError: (error) => {
+        toast.error(getApiErrorMessage(error));
+      },
+    });
+  };
+
 
 
   return (
@@ -78,7 +96,7 @@ export function AdminArchiveTools({ onArchivedClick }: AdminArchiveToolsProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <Button
               onClick={onArchivedClick}
               variant="outline"
@@ -122,6 +140,25 @@ export function AdminArchiveTools({ onArchivedClick }: AdminArchiveToolsProps) {
                 <>
                   <Trash2 className="mr-2 h-4 w-4" />
                   {t("deleteOldArchived")}
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={() => setConfirmCleanup(true)}
+              disabled={isCleaningUp}
+              variant="outline"
+              className="justify-start"
+            >
+              {isCleaningUp ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {tc("processing")}
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t("cleanupOrphaned")}
                 </>
               )}
             </Button>
@@ -193,6 +230,49 @@ export function AdminArchiveTools({ onArchivedClick }: AdminArchiveToolsProps) {
               disabled={isDeletingOld}
             >
               {isDeletingOld && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {tc("delete")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cleanup Orphaned Files Dialog */}
+      <Dialog open={confirmCleanup} onOpenChange={setConfirmCleanup}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("cleanupOrphanedTitle")}</DialogTitle>
+            <DialogDescription>{t("cleanupOrphanedDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">{t("hoursOldLabel")}</label>
+              <Input
+                type="number"
+                min="1"
+                max="168"
+                value={hoursOld}
+                onChange={(e) => setHoursOld(e.target.value)}
+                disabled={isCleaningUp}
+                className="mt-2"
+                placeholder="24"
+              />
+              <p className="text-xs text-muted-foreground mt-1">{t("hoursOldHint")}</p>
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmCleanup(false)}
+              disabled={isCleaningUp}
+            >
+              {tc("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCleanupOrphaned}
+              disabled={isCleaningUp}
+            >
+              {isCleaningUp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {tc("delete")}
             </Button>
           </div>

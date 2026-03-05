@@ -134,6 +134,7 @@
     "applySelected": "تطبيق المحدد",
     "extractionApplied": "تم تطبيق البيانات المستخرجة",
     "imageUploaded": "تم رفع الصورة",
+    "imageUploadedWithData": "تم رفع الصورة وملء النموذج تلقائياً بالبيانات المستخرجة",
     "imageDeleted": "تم حذف الصورة",
     "deleteImage": "حذف الصورة",
     "deleteImageConfirm": "هل أنت متأكد من حذف هذه الصورة؟",
@@ -153,6 +154,7 @@
     "selectDestinationsFirst": "يرجى اختيار وجهة واحدة على الأقل أولاً",
     "searchDestinations": "بحث عن وجهات...",
     "offerImage": "صورة العرض",
+    "uploadImageToAutofill": "قم برفع صورة العرض لاستخراج البيانات وملء النموذج تلقائياً",
     "uploading": "جارِي رفع الصورة...",
     "roomOptions": "خيارات الغرفة",
     "addRoomOption": "إضافة خيار غرفة",
@@ -247,7 +249,13 @@
     "deleteOldDescription": "حذف جميع العروض المؤرشفة التي يزيد عمرها عن الأيام المحددة بشكل دائم. لا يمكن التراجع عن هذا الإجراء.",
     "daysOldLabel": "عدد الأيام",
     "daysOldHint": "حذف العروض المؤرشفة منذ أكثر من هذا العدد من الأيام",
-    "deleteOldSuccess": "تم حذف {count} عرض مؤرشف بنجاح يزيد عمره عن {days} يوماً"
+    "deleteOldSuccess": "تم حذف {count} عرض مؤرشف بنجاح يزيد عمره عن {days} يوماً",
+    "cleanupOrphaned": "تنظيف الملفات اليتيمة",
+    "cleanupOrphanedTitle": "تنظيف ملفات الصور اليتيمة؟",
+    "cleanupOrphanedDescription": "حذف ملفات الصور المرفوعة ولكن لم يتم تأكيدها مع عرض بشكل دائم. سيتم حذف الملفات التي يزيد عمرها عن الساعات المحددة فقط.",
+    "hoursOldLabel": "عدد الساعات",
+    "hoursOldHint": "حذف الملفات اليتيمة الأقدم من هذا العدد من الساعات (يُنصح بـ 24+)",
+    "cleanupOrphanedSuccess": "تم حذف {count} ملف يتيم بنجاح يزيد عمره عن {hours} ساعة"
   },
   "destinations": {
     "destinations": "الوجهات",

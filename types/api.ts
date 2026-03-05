@@ -1,6 +1,6 @@
 export type TravelAgencyStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type PackageStatus = "ACTIVE" | "INACTIVE";
-export type OfferStatus = "PENDING" | "ACTIVE" | "INACTIVE" | "ARCHIVED";
+export type OfferStatus = "PENDING" | "ACTIVE" | "ARCHIVED";
 export type DestinationStatus = "PENDING" | "ACTIVE" | "ARCHIVED";
 export type HotelStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
 export type RoomType = "TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
@@ -274,6 +274,58 @@ export interface PreUploadResponse {
   imageUrl: string;
   originalSize: number;
   optimizedSize: number;
+  storagePath?: string;
+  extractedText?: string;
+  parsedOffer?: {
+    // ✅ Dates (smart calculation)
+    startDate?: string;
+    endDate?: string;
+    durationDays?: number;
+    
+    // ✅ Pricing (multi-currency)
+    priceBHD?: number;
+    priceSAR?: number;
+    priceAED?: number;
+    
+    // ✅ Inclusions
+    visaIncluded?: boolean;
+    includesInsurance?: boolean;
+    includesIslamicProgram?: boolean;
+    islamicAdvisor?: string;
+    
+    // ✅ Room
+    roomType?: "TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
+    
+    // ✅ Meals (structured array)
+    meals?: Array<{
+      mealType: "BREAKFAST" | "LUNCH" | "DINNER" | "TEA" | "WATER";
+      serviceType?: "BUFFET" | "PARCEL";
+    }>;
+    
+    // ✅ Transports (structured array)
+    transports?: Array<{
+      transportType: "BUS" | "CAR" | "FLY" | "TRAIN";
+      fromLocation: string;
+      toLocation: string;
+      isDirectFlight?: boolean;
+      carType?: string;
+      order: number;
+      notes?: string;
+    }>;
+    
+    // ✅ Destinations (with enrichment)
+    destinationNames?: string[];
+    destinationIds?: string[];
+    destinations?: Array<{
+      destinationId: string;
+      numberOfNights: number;
+      sequenceOrder: number;
+    }>;
+    
+    // ✅ Hotels (with enrichment)
+    hotelNames?: string[];
+    hotelIds?: string[];
+  };
 }
 
 export type OfferDestinationInput = {

@@ -33,7 +33,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useHotels } from "@/hooks/use-hotels";
 import { useDestinations } from "@/hooks/use-destinations";
-import { usePreUploadImage } from "@/hooks/use-offers";
+import { usePreUploadImage, useDeletePreUploadImage } from "@/hooks/use-offers";
 import { getApiErrorMessage } from "@/lib/api";
 import { toast } from "sonner";
 import type { Offer, RoomOption } from "@/types/api";
@@ -43,7 +43,7 @@ const ROOM_TYPES      = ["TWIN", "TRIPLE", "QUAD", "FAMILY"] as const;
 const MEAL_TYPES      = ["BREAKFAST", "LUNCH", "DINNER", "TEA", "WATER"] as const;
 const SERVICE_TYPES   = ["BUFFET", "PARCEL"] as const;
 const TRANSPORT_TYPES = ["FLY", "BUS", "CAR", "TRAIN"] as const;
-const OFFER_STATUSES  = ["PENDING", "ACTIVE", "INACTIVE", "ARCHIVED"] as const;
+const OFFER_STATUSES  = ["PENDING", "ACTIVE", "ARCHIVED"] as const;
 const MEAL_NEEDS_SERVICE = new Set(["BREAKFAST", "LUNCH", "DINNER"]);
 
 //  zod schemas 
@@ -130,6 +130,7 @@ export function OfferForm({
   const tc = useTranslations("common");
 
   const preUpload = usePreUploadImage();
+  const deletePreUpload = useDeletePreUploadImage();
   const inputRef  = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     defaultValues?.imageUrl || null
@@ -147,7 +148,7 @@ export function OfferForm({
       checkInDate:   defaultValues?.checkInDate?.slice(0, 10)  || "",
       checkOutDate:  defaultValues?.checkOutDate?.slice(0, 10) || "",
       numberOfDays:  defaultValues?.numberOfDays ?? "",
-      status:  (defaultValues?.status as typeof OFFER_STATUSES[number]) || "PENDING",
+      status:  (((defaultValues?.status as any) === "INACTIVE" ? "ACTIVE" : defaultValues?.status) as typeof OFFER_STATUSES[number]) || "PENDING",
       includesIslamicProgram: defaultValues?.includesIslamicProgram ?? false,
       islamicAdvisor:    defaultValues?.islamicAdvisor    || "",
       includesVisa:      defaultValues?.includesVisa      ?? false,
@@ -206,10 +207,113 @@ export function OfferForm({
       const result = await preUpload.mutateAsync(fd);
       form.setValue("imageUrl", result.imageUrl);
       setPreviewUrl(result.imageUrl);
-      toast.success(t("imageUploaded"));
+      
+      // Auto-fill form if parsedOffer data is available
+      if (result.parsedOffer) {
+        const parsed = result.parsedOffer;
+        
+        // ✅ Map dates
+        if (parsed.startDate) {
+          form.setValue("checkInDate", parsed.startDate);
+        }
+        if (parsed.endDate) {
+          form.setValue("checkOutDate", parsed.endDate);
+        }
+        
+        // ✅ Map duration
+        if (parsed.durationDays) {
+          form.setValue("numberOfDays", parsed.durationDays);
+        }
+        
+        // ✅ Map visa
+        if (parsed.visaIncluded !== undefined) {
+          form.setValue("includesVisa", parsed.visaIncluded);
+        }
+        
+        // ✅ Map insurance
+        if (parsed.includesInsurance !== undefined) {
+          form.setValue("includesInsurance", parsed.includesInsurance);
+        }
+        
+        // ✅ Map Islamic program
+        if (parsed.includesIslamicProgram !== undefined) {
+          form.setValue("includesIslamicProgram", parsed.includesIslamicProgram);
+        }
+        if (parsed.islamicAdvisor) {
+          form.setValue("islamicAdvisor", parsed.islamicAdvisor);
+        }
+        
+        // ✅ Map room options with price and type
+        if (parsed.priceBHD || parsed.priceSAR || parsed.priceAED) {
+          const price = parsed.priceBHD || parsed.priceSAR || parsed.priceAED || 0;
+          const currentRooms = form.getValues("roomOptions") || [];
+          if (currentRooms.length > 0) {
+            form.setValue("roomOptions.0.price", price);
+          }
+        }
+        
+        if (parsed.roomType && ["TWIN", "TRIPLE", "QUAD", "FAMILY"].includes(parsed.roomType)) {
+          const currentRooms = form.getValues("roomOptions") || [];
+          if (currentRooms.length > 0) {
+            form.setValue("roomOptions.0.roomType", parsed.roomType as any);
+          }
+        }
+        
+        // ✅ Map meals array
+        if (parsed.meals && parsed.meals.length > 0) {
+          form.setValue("meals", parsed.meals.map(m => ({
+            mealType: m.mealType,
+            serviceType: m.serviceType ?? null,
+          })));
+        }
+        
+        // ✅ Map transports array
+        if (parsed.transports && parsed.transports.length > 0) {
+          form.setValue("transports", parsed.transports.map(t => ({
+            transportType: t.transportType,
+            fromLocation: t.fromLocation,
+            toLocation: t.toLocation,
+            isDirectFlight: t.isDirectFlight ?? null,
+            carType: t.carType ?? null,
+            order: t.order,
+            notes: t.notes ?? null,
+          })));
+        }
+        
+        // ✅ Map destinations (if IDs provided)
+        if (parsed.destinations && parsed.destinations.length > 0) {
+          form.setValue("destinations", parsed.destinations.map(d => ({
+            destinationId: d.destinationId,
+            numberOfNights: d.numberOfNights,
+            sequenceOrder: d.sequenceOrder,
+          })));
+        }
+        
+        // ✅ Map hotels (if IDs provided)
+        if (parsed.hotelIds && parsed.hotelIds.length > 0) {
+          form.setValue("hotelIds", parsed.hotelIds);
+        }
+        
+        toast.success(t("imageUploadedWithData"));
+      } else {
+        toast.success(t("imageUploaded"));
+      }
     } catch (err) { toast.error(getApiErrorMessage(err)); }
   };
-  const clearImage = () => { form.setValue("imageUrl", ""); setPreviewUrl(null); };
+  
+  const clearImage = async () => {
+    const currentImageUrl = form.getValues("imageUrl");
+    if (currentImageUrl) {
+      try {
+        await deletePreUpload.mutateAsync(currentImageUrl);
+        toast.success(t("imageDeleted"));
+      } catch (err) {
+        toast.error(getApiErrorMessage(err));
+      }
+    }
+    form.setValue("imageUrl", "");
+    setPreviewUrl(null);
+  };
 
   const destLabel = (id: string) => {
     const d = allDestinations.find((x) => x.id === id);
@@ -220,6 +324,54 @@ export function OfferForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+
+        {/*  Image Upload - Auto-fill form on upload  */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              {t("offerImage")}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("uploadImageToAutofill")}
+            </p>
+          </CardHeader>
+          <CardContent>
+            {previewUrl ? (
+              <div className="relative rounded-lg border overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={previewUrl} alt="Offer" className="h-40 w-full object-cover" />
+                <Button type="button" variant="destructive" size="icon"
+                  className="absolute top-2 end-2 h-7 w-7" onClick={clearImage}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <div
+                className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                onClick={() => inputRef.current?.click()}
+              >
+                <input ref={inputRef} type="file" accept="image/*" className="hidden"
+                  onChange={(e) => handleImageUpload(e.target.files)} />
+                {preUpload.isPending ? (
+                  <><Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">{t("uploading")}</p></>
+                ) : (
+                  <><div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{t("dropImageHere")}</p>
+                    <p className="text-xs text-muted-foreground">{t("orClickToUpload")}</p>
+                  </div>
+                  <Button type="button" variant="outline" size="sm">
+                    <Upload className="me-2 h-4 w-4" />{t("uploadImage")}
+                  </Button></>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/*  Names & Descriptions  */}
         <Tabs defaultValue="ar">
@@ -452,48 +604,6 @@ export function OfferForm({
             );
           }} />
         )}
-
-        {/*  Image  */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">{t("offerImage")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {previewUrl ? (
-              <div className="relative rounded-lg border overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={previewUrl} alt="Offer" className="h-40 w-full object-cover" />
-                <Button type="button" variant="destructive" size="icon"
-                  className="absolute top-2 end-2 h-7 w-7" onClick={clearImage}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <div
-                className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
-                onClick={() => inputRef.current?.click()}
-              >
-                <input ref={inputRef} type="file" accept="image/*" className="hidden"
-                  onChange={(e) => handleImageUpload(e.target.files)} />
-                {preUpload.isPending ? (
-                  <><Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">{t("uploading")}</p></>
-                ) : (
-                  <><div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{t("dropImageHere")}</p>
-                    <p className="text-xs text-muted-foreground">{t("orClickToUpload")}</p>
-                  </div>
-                  <Button type="button" variant="outline" size="sm">
-                    <Upload className="me-2 h-4 w-4" />{t("uploadImage")}
-                  </Button></>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/*  Room Options  */}
         <FormField control={form.control} name="roomOptions" render={({ field }) => {
