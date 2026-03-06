@@ -30,6 +30,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { OfferDuplicateConfirmationDialog, type DuplicateOfferData } from "./OfferDuplicateConfirmationDialog";
 import { cn } from "@/lib/utils";
 import { useHotels } from "@/hooks/use-hotels";
 import { useDestinations } from "@/hooks/use-destinations";
@@ -139,6 +140,10 @@ export function OfferForm({
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     defaultValues?.imageUrl || null
   );
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [pendingDuplicateData, setPendingDuplicateData] = useState<DuplicateOfferData | null>(null);
+  const [pendingFormData, setPendingFormData] = useState<OfferFormValues | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(schema) as any,
@@ -340,13 +345,78 @@ export function OfferForm({
 
   const handleFormSubmit = async (values: OfferFormValues) => {
     try {
+      setPendingFormData(values);
       if (submitActionRef.current === "continue" && onSubmitAndContinue) {
         await onSubmitAndContinue(values);
       } else {
         await onSubmit(values);
       }
+    } catch (err: any) {
+      console.log("[OfferForm] Catch error:", {
+        status: err?.response?.status,
+        data: err?.response?.data,
+        errorCode: err?.response?.data?.error?.code || err?.response?.data?.code,
+      });
+      
+      // Check if it's a duplicate offer error - check both error.code and error.error.code paths
+      const errorCode = err?.response?.data?.error?.code || err?.response?.data?.code;
+      const isDuplicate = err?.response?.status === 409 && errorCode === "POSSIBLE_DUPLICATE";
+      
+      console.log("[OfferForm] isDuplicate check:", { isDuplicate, errorCode, status: err?.response?.status });
+      
+      if (isDuplicate) {
+        const duplicateData: DuplicateOfferData = {
+          duplicateOfferId: err.response.data.error?.duplicateOfferId || err.response.data.duplicateOfferId || "Unknown",
+          duplicateSummary: err.response.data.error?.duplicateSummary || err.response.data.duplicateSummary || {
+            checkInDate: "",
+            checkOutDate: "",
+            numberOfDays: 0,
+            status: "PENDING",
+          },
+        };
+        console.log("[OfferForm] Setting duplicate data:", duplicateData);
+        setPendingDuplicateData(duplicateData);
+        setIsDuplicateDialogOpen(true);
+      } else {
+        console.log("[OfferForm] Not a duplicate error, showing error toast");
+        toast.error(getApiErrorMessage(err));
+      }
     } finally {
       submitActionRef.current = "default";
+    }
+  };
+
+  const handleCreateAnywayClick = async () => {
+    if (!pendingFormData) return;
+    setIsRetrying(true);
+    try {
+      // Add forceCreate flag to the payload to override duplicate detection
+      const dataWithForce = { ...pendingFormData, forceCreate: true } as any;
+      
+      if (submitActionRef.current === "continue" && onSubmitAndContinue) {
+        await onSubmitAndContinue(dataWithForce);
+      } else {
+        await onSubmit(dataWithForce);
+      }
+      setIsDuplicateDialogOpen(false);
+      setPendingDuplicateData(null);
+      setPendingFormData(null);
+      toast.success(t("created"));
+    } catch (err: any) {
+      // Check if it's STILL a duplicate error after forceCreate - if not, close dialog
+      const errorCode = err?.response?.data?.error?.code || err?.response?.data?.code;
+      const isDuplicate = err?.response?.status === 409 && errorCode === "POSSIBLE_DUPLICATE";
+      
+      if (isDuplicate) {
+        toast.error("Failed to create offer despite force flag. Please contact support.");
+      } else if (err?.response?.status !== 409) {
+        toast.error(getApiErrorMessage(err));
+        setIsDuplicateDialogOpen(false);
+        setPendingDuplicateData(null);
+        setPendingFormData(null);
+      }
+    } finally {
+      setIsRetrying(false);
     }
   };
 
@@ -1082,6 +1152,15 @@ export function OfferForm({
         </div> {/* End Grid Layout */}
 
       </form>
+
+      {/* Duplicate Offer Confirmation Dialog */}
+      <OfferDuplicateConfirmationDialog
+        open={isDuplicateDialogOpen}
+        onOpenChange={setIsDuplicateDialogOpen}
+        duplicateData={pendingDuplicateData}
+        onCreateAnywayClick={handleCreateAnywayClick}
+        isLoading={isRetrying}
+      />
     </Form>
   );
 }

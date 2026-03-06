@@ -20,8 +20,43 @@ const api = axios.create({
   },
 });
 
+function toStrictIsoDateString(value: unknown): unknown {
+  if (typeof value !== "string" || !value) return value;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return `${value}T00:00:00.000Z`;
+  }
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+
+  return value;
+}
+
+function normalizeOfferDateFields(data: unknown): unknown {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return data;
+
+  const payload = data as Record<string, unknown>;
+  return {
+    ...payload,
+    ...(payload.checkInDate ? { checkInDate: toStrictIsoDateString(payload.checkInDate) } : {}),
+    ...(payload.checkOutDate ? { checkOutDate: toStrictIsoDateString(payload.checkOutDate) } : {}),
+  };
+}
+
 // ─── Request interceptor — attach access token ───────────────────────────────
 api.interceptors.request.use((config) => {
+  // Defensive normalization for offer date fields regardless of caller.
+  if (
+    config.url &&
+    /^\/offers(\/|$)/.test(config.url) &&
+    (config.method === "post" || config.method === "patch")
+  ) {
+    config.data = normalizeOfferDateFields(config.data);
+  }
+
   if (typeof window !== "undefined") {
     const token = sessionStorage.getItem("accessToken");
     if (token) config.headers.Authorization = `Bearer ${token}`;

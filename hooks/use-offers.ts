@@ -2,6 +2,32 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch, apiDelete, apiPostForm } from "@/lib/api";
 import type { Offer, PaginatedResponse, OfferImage, ImageUploadResponse, PreUploadResponse, CreateOfferPayload, UpdateOfferPayload } from "@/types/api";
 
+function normalizeIsoDate(value?: string): string | undefined {
+  if (!value) return value;
+
+  // Backend expects strict ISO 8601. Convert date-only input from HTML date fields.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return `${value}T00:00:00.000Z`;
+  }
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+
+  return value;
+}
+
+function normalizeOfferDates<T extends { checkInDate?: string; checkOutDate?: string }>(
+  payload: T
+): T {
+  return {
+    ...payload,
+    ...(payload.checkInDate ? { checkInDate: normalizeIsoDate(payload.checkInDate) } : {}),
+    ...(payload.checkOutDate ? { checkOutDate: normalizeIsoDate(payload.checkOutDate) } : {}),
+  };
+}
+
 export function useOffers(params?: {
   page?: number;
   limit?: number;
@@ -43,7 +69,17 @@ export function useOffer(id: string) {
 export function useCreateOffer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateOfferPayload) => apiPost<Offer>("/offers", data),
+    mutationFn: (params: CreateOfferPayload | { data: CreateOfferPayload; options?: { forceCreate?: boolean } }) => {
+      // Check if params is in new format {data, options} or old format (just data)
+      const isNewFormat = params && "data" in params && "options" in params;
+      const data = isNewFormat ? (params as any).data : (params as CreateOfferPayload);
+      const options = isNewFormat ? (params as any).options : undefined;
+      
+      const body = options?.forceCreate 
+        ? { ...data, forceCreate: true }
+        : data;
+      return apiPost<Offer>("/offers", normalizeOfferDates(body));
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["offers"] }); },
   });
 }
@@ -51,7 +87,8 @@ export function useCreateOffer() {
 export function useUpdateOffer(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: UpdateOfferPayload) => apiPatch<Offer>(`/offers/${id}`, data),
+    mutationFn: (data: UpdateOfferPayload) =>
+      apiPatch<Offer>(`/offers/${id}`, normalizeOfferDates(data)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["offers"] });
       qc.invalidateQueries({ queryKey: ["offer", id] });

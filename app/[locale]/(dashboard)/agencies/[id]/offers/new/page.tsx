@@ -26,7 +26,7 @@ export default function NewOfferPage() {
 
   const handleSubmit = async (values: OfferFormValues) => {
     try {
-      const { hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, ...rest } = values;
+      const { hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, forceCreate, ...rest } = values as any;
       const offer = await createOffer.mutateAsync({
         ...rest,
         ...(numberOfDays !== "" && numberOfDays !== undefined ? { numberOfDays } : {}),
@@ -37,17 +37,24 @@ export default function NewOfferPage() {
         roomOptions: roomOptions.map(({ id, ...opt }: any) => opt),
         ...(meals && meals.length > 0 ? { meals } : {}),
         ...(transports && transports.length > 0 ? { transports } : {}),
+        ...(forceCreate ? { forceCreate: true } : {}),
       });
       toast.success(t("created"));
       router.push(`/${locale}/agencies/${agencyId}/offers/${offer.id}`);
     } catch (err) {
+      // Re-throw duplicate errors so form component can handle them with dialog
+      const errorCode = (err as any)?.response?.data?.error?.code || (err as any)?.response?.data?.code;
+      if ((err as any)?.response?.status === 409 && errorCode === "POSSIBLE_DUPLICATE") {
+        throw err; // Re-throw so form component catches it and shows dialog
+      }
+      // Show error toast for other errors
       toast.error(getApiErrorMessage(err));
     }
   };
 
   const handleSubmitAndContinue = async (values: OfferFormValues) => {
     try {
-      const { hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, ...rest } = values;
+      const { hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, forceCreate, ...rest } = values as any;
       await createOffer.mutateAsync({
         ...rest,
         ...(numberOfDays !== "" && numberOfDays !== undefined ? { numberOfDays } : {}),
@@ -58,9 +65,16 @@ export default function NewOfferPage() {
         roomOptions: roomOptions.map(({ id, ...opt }: any) => opt),
         ...(meals && meals.length > 0 ? { meals } : {}),
         ...(transports && transports.length > 0 ? { transports } : {}),
+        ...(forceCreate ? { forceCreate: true } : {}),
       });
       toast.success(t("createdAndContinue"));
     } catch (err) {
+      // Re-throw duplicate errors so form component can handle them with dialog
+      const errorCode = (err as any)?.response?.data?.error?.code || (err as any)?.response?.data?.code;
+      if ((err as any)?.response?.status === 409 && errorCode === "POSSIBLE_DUPLICATE") {
+        throw err; // Re-throw so form component catches it and shows dialog
+      }
+      // Show error toast for other errors
       toast.error(getApiErrorMessage(err));
     }
   };
