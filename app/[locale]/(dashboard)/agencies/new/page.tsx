@@ -29,7 +29,11 @@ export default function NewAgencyPage() {
 
   async function handleSubmit(values: Partial<TravelAgency>) {
     try {
-      await createAgency.mutateAsync(values);
+      const normalizedEmail = values.contactEmail?.trim();
+      await createAgency.mutateAsync({
+        ...values,
+        contactEmail: normalizedEmail ? normalizedEmail : null,
+      });
       toast.success(t("createSuccess"));
       router.push(`/${locale}/agencies`);
     } catch (err) {

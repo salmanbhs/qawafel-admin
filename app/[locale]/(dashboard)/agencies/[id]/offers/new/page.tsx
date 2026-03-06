@@ -45,6 +45,26 @@ export default function NewOfferPage() {
     }
   };
 
+  const handleSubmitAndContinue = async (values: OfferFormValues) => {
+    try {
+      const { hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, ...rest } = values;
+      await createOffer.mutateAsync({
+        ...rest,
+        ...(numberOfDays !== "" && numberOfDays !== undefined ? { numberOfDays } : {}),
+        travelAgencyId: agencyId,
+        ...(hotelIds && hotelIds.length > 0 ? { hotelIds } : {}),
+        ...(destinations && destinations.length > 0 ? { destinations } : {}),
+        ...(imageUrl ? { imageUrl } : {}),
+        roomOptions: roomOptions.map(({ id, ...opt }: any) => opt),
+        ...(meals && meals.length > 0 ? { meals } : {}),
+        ...(transports && transports.length > 0 ? { transports } : {}),
+      });
+      toast.success(t("createdAndContinue"));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -62,8 +82,10 @@ export default function NewOfferPage() {
           <OfferForm
             travelAgencyId={agencyId}
             onSubmit={handleSubmit}
+            onSubmitAndContinue={handleSubmitAndContinue}
             isLoading={createOffer.isPending}
             submitLabel={t("createOffer")}
+            submitAndContinueLabel={t("createAndAddAnother")}
             isSystemAdmin={user?.role === "SYSTEM_ADMIN"}
           />
         </CardContent>

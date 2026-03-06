@@ -61,7 +61,7 @@ export default function NewOfferPage() {
     if (!resolvedAgencyId) return;
     try {
       const { hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, ...rest } = values;
-      const offer = await createOffer.mutateAsync({
+      await createOffer.mutateAsync({
         ...rest,
         ...(numberOfDays !== "" && numberOfDays !== undefined ? { numberOfDays } : {}),
         travelAgencyId: resolvedAgencyId,
@@ -79,8 +79,29 @@ export default function NewOfferPage() {
     }
   }
 
+  async function handleSubmitAndContinue(values: OfferFormValues) {
+    if (!resolvedAgencyId) return;
+    try {
+      const { hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, ...rest } = values;
+      await createOffer.mutateAsync({
+        ...rest,
+        ...(numberOfDays !== "" && numberOfDays !== undefined ? { numberOfDays } : {}),
+        travelAgencyId: resolvedAgencyId,
+        ...(hotelIds && hotelIds.length > 0 ? { hotelIds } : {}),
+        ...(destinations && destinations.length > 0 ? { destinations } : {}),
+        ...(imageUrl ? { imageUrl } : {}),
+        roomOptions: roomOptions.map(({ id, ...opt }: any) => opt),
+        ...(meals && meals.length > 0 ? { meals } : {}),
+        ...(transports && transports.length > 0 ? { transports } : {}),
+      });
+      toast.success(t("createdAndContinue"));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
+  }
+
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href={`/${locale}/offers`}>
@@ -141,8 +162,10 @@ export default function NewOfferPage() {
             <OfferForm
               travelAgencyId={resolvedAgencyId}
               onSubmit={handleSubmit}
+              onSubmitAndContinue={handleSubmitAndContinue}
               isLoading={createOffer.isPending}
               submitLabel={t("createOffer")}
+              submitAndContinueLabel={t("createAndAddAnother")}
               isSystemAdmin={isAdmin}
             />
           </CardContent>

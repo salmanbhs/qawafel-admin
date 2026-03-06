@@ -53,7 +53,7 @@ export default function OfferEditPage() {
   };
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="space-y-6">
       <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => router.back()}>
         <ArrowRight className="h-4 w-4 rtl:rotate-180" />
         {locale === "ar" ? "رجوع" : "Back"}

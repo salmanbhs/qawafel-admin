@@ -28,7 +28,11 @@ export default function EditAgencyPage({ params }: { params: Promise<{ id: strin
 
   async function handleSubmit(values: Partial<TravelAgency>) {
     try {
-      await updateAgency.mutateAsync(values);
+      const normalizedEmail = values.contactEmail?.trim();
+      await updateAgency.mutateAsync({
+        ...values,
+        contactEmail: normalizedEmail ? normalizedEmail : null,
+      });
       toast.success(t("updateSuccess"));
       router.push(`/${locale}/agencies/${id}`);
     } catch (err) {

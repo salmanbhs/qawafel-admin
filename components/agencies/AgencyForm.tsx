@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
-import { Loader2, X, Upload } from "lucide-react";
+import { Loader2, X, Upload, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -29,11 +29,18 @@ const schema = z
     descriptionAr: z.string().max(2000).optional(),
     descriptionEn: z.string().max(2000).optional(),
     contactEmail: z.string().email().optional().or(z.literal("")),
+    officeNumbers: z.array(z.string().min(1).max(20)).optional().default([]),
+    whatsappNumbers: z.array(z.string().min(1).max(20)).optional().default([]),
+    instagramAccount: z.string().max(255).optional().or(z.literal("")),
     status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
   })
   .refine((d) => d.nameAr || d.nameEn, {
     message: "At least one name is required",
     path: ["nameAr"],
+  })
+  .refine((d) => (d.officeNumbers && d.officeNumbers.length > 0) || (d.whatsappNumbers && d.whatsappNumbers.length > 0), {
+    message: "At least one office number or WhatsApp number must be provided",
+    path: ["officeNumbers"],
   });
 
 type AgencyFormValues = z.infer<typeof schema>;
@@ -66,8 +73,21 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, ag
       descriptionAr: defaultValues?.descriptionAr || "",
       descriptionEn: defaultValues?.descriptionEn || "",
       contactEmail: defaultValues?.contactEmail || "",
-      status: defaultValues?.status || "DRAFT",
+      officeNumbers: defaultValues?.officeNumbers || [],
+      whatsappNumbers: defaultValues?.whatsappNumbers || [],
+      instagramAccount: defaultValues?.instagramAccount || "",
+      status: defaultValues?.status || "PUBLISHED",
     },
+  });
+
+  const officeNumbersFieldArray = useFieldArray({
+    control: form.control,
+    name: "officeNumbers",
+  });
+
+  const whatsappNumbersFieldArray = useFieldArray({
+    control: form.control,
+    name: "whatsappNumbers",
   });
 
   const handleIconUpload = async (files: FileList | null) => {
@@ -181,7 +201,10 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, ag
             name="contactEmail"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("contactEmail")}</FormLabel>
+                <FormLabel>
+                  {t("contactEmail")}
+                  <span className="text-muted-foreground text-xs ms-1">{tc("optional")}</span>
+                </FormLabel>
                 <FormControl>
                   <Input type="email" dir="ltr" placeholder="bookings@agency.com" {...field} />
                 </FormControl>
@@ -189,6 +212,135 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, ag
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="instagramAccount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  {t("instagramAccount")}
+                  <span className="text-muted-foreground text-xs ms-1">{tc("optional")}</span>
+                </FormLabel>
+                <FormControl>
+                  <Input dir="ltr" placeholder="@qawafel_travel" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Phone Numbers Section */}
+        <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border/50">
+          <div>
+            <h3 className="font-semibold text-sm mb-4">{t("contactPhones")}</h3>
+            <p className="text-xs text-muted-foreground mb-4">{t("phoneValidation")}</p>
+          </div>
+
+          {/* Office Numbers */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium">{t("officeNumbers")}</label>
+            <div className="space-y-2">
+              {officeNumbersFieldArray.fields.map((field, index) => (
+                <div key={field.id} className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`officeNumbers.${index}`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            dir="ltr"
+                            placeholder="+973123456789"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => officeNumbersFieldArray.remove(index)}
+                    className="h-10"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => officeNumbersFieldArray.append("")}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 me-2" />
+              {t("addOfficeNumber")}
+            </Button>
+          </div>
+
+          {/* WhatsApp Numbers */}
+          <div className="space-y-3 pt-4 border-t">
+            <label className="text-sm font-medium">{t("whatsappNumbers")}</label>
+            <div className="space-y-2">
+              {whatsappNumbersFieldArray.fields.map((field, index) => (
+                <div key={field.id} className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`whatsappNumbers.${index}`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            dir="ltr"
+                            placeholder="+966501234567"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => whatsappNumbersFieldArray.remove(index)}
+                    className="h-10"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => whatsappNumbersFieldArray.append("")}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 me-2" />
+              {t("addWhatsappNumber")}
+            </Button>
+          </div>
+
+          {/* Validation Error */}
+          {form.formState.errors.officeNumbers && (
+            <div className="text-sm text-destructive mt-2">
+              {form.formState.errors.officeNumbers.message}
+            </div>
+          )}
+        </div>
+
+        {/* Status */}
+        <div className="grid gap-4 sm:grid-cols-1">
           <FormField
             control={form.control}
             name="status"

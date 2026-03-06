@@ -17,7 +17,10 @@ export interface TravelAgency {
   descriptionAr?: string;
   descriptionEn?: string;
   description?: string;
-  contactEmail?: string;
+  contactEmail?: string | null;
+  officeNumbers?: string[];
+  whatsappNumbers?: string[];
+  instagramAccount?: string;
   iconImageUrl?: string;
   bannerImageUrl?: string;
   status: TravelAgencyStatus;
@@ -282,19 +285,22 @@ export interface PreUploadResponse {
     endDate?: string;
     durationDays?: number;
     
-    // ✅ Pricing (multi-currency)
-    priceBHD?: number;
-    priceSAR?: number;
-    priceAED?: number;
+    // ✅ Pricing
+    price?: number;
     
     // ✅ Inclusions
     visaIncluded?: boolean;
     includesInsurance?: boolean;
     includesIslamicProgram?: boolean;
-    islamicAdvisor?: string;
+    islamicAdvisor?: string | null;
     
-    // ✅ Room
+    // ✅ Room Type & Room Options
     roomType?: "TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
+    roomTypeOptions?: Array<{
+      roomType: "TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
+      price: number;
+      nights?: number;
+    }>;
     
     // ✅ Meals (structured array)
     meals?: Array<{
