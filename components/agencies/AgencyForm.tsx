@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
@@ -29,8 +29,8 @@ const schema = z
     descriptionAr: z.string().max(2000).optional(),
     descriptionEn: z.string().max(2000).optional(),
     contactEmail: z.string().email().optional().or(z.literal("")),
-    officeNumbers: z.array(z.string().min(1).max(20)).optional().default([]),
-    whatsappNumbers: z.array(z.string().min(1).max(20)).optional().default([]),
+    officeNumbers: z.array(z.string().min(1).max(20)),
+    whatsappNumbers: z.array(z.string().min(1).max(20)),
     instagramAccount: z.string().max(255).optional().or(z.literal("")),
     status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
   })
@@ -80,15 +80,13 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, ag
     },
   });
 
-  const officeNumbersFieldArray = useFieldArray({
-    control: form.control,
-    name: "officeNumbers",
-  });
+  const officeNumbers = useWatch({ control: form.control, name: "officeNumbers" }) ?? [];
+  const whatsappNumbers = useWatch({ control: form.control, name: "whatsappNumbers" }) ?? [];
 
-  const whatsappNumbersFieldArray = useFieldArray({
-    control: form.control,
-    name: "whatsappNumbers",
-  });
+  const addOfficeNumber = () => form.setValue("officeNumbers", [...officeNumbers, ""], { shouldValidate: true });
+  const removeOfficeNumber = (i: number) => form.setValue("officeNumbers", officeNumbers.filter((_, idx) => idx !== i), { shouldValidate: true });
+  const addWhatsappNumber = () => form.setValue("whatsappNumbers", [...whatsappNumbers, ""], { shouldValidate: true });
+  const removeWhatsappNumber = (i: number) => form.setValue("whatsappNumbers", whatsappNumbers.filter((_, idx) => idx !== i), { shouldValidate: true });
 
   const handleIconUpload = async (files: FileList | null) => {
     if (!files || files.length === 0 || !agencyId) return;
@@ -241,8 +239,8 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, ag
           <div className="space-y-3">
             <label className="text-sm font-medium">{t("officeNumbers")}</label>
             <div className="space-y-2">
-              {officeNumbersFieldArray.fields.map((field, index) => (
-                <div key={field.id} className="flex gap-2">
+              {officeNumbers.map((_field, index) => (
+                <div key={index} className="flex gap-2">
                   <FormField
                     control={form.control}
                     name={`officeNumbers.${index}`}
@@ -264,7 +262,7 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, ag
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => officeNumbersFieldArray.remove(index)}
+                    onClick={() => removeOfficeNumber(index)}
                     className="h-10"
                   >
                     <X className="h-4 w-4" />
@@ -276,7 +274,7 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, ag
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => officeNumbersFieldArray.append("")}
+              onClick={addOfficeNumber}
               className="w-full sm:w-auto"
             >
               <Plus className="h-4 w-4 me-2" />
@@ -288,8 +286,8 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, ag
           <div className="space-y-3 pt-4 border-t">
             <label className="text-sm font-medium">{t("whatsappNumbers")}</label>
             <div className="space-y-2">
-              {whatsappNumbersFieldArray.fields.map((field, index) => (
-                <div key={field.id} className="flex gap-2">
+              {whatsappNumbers.map((_field, index) => (
+                <div key={index} className="flex gap-2">
                   <FormField
                     control={form.control}
                     name={`whatsappNumbers.${index}`}
@@ -311,7 +309,7 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, ag
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => whatsappNumbersFieldArray.remove(index)}
+                    onClick={() => removeWhatsappNumber(index)}
                     className="h-10"
                   >
                     <X className="h-4 w-4" />
@@ -323,7 +321,7 @@ export function AgencyForm({ defaultValues, onSubmit, isLoading, submitLabel, ag
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => whatsappNumbersFieldArray.append("")}
+              onClick={addWhatsappNumber}
               className="w-full sm:w-auto"
             >
               <Plus className="h-4 w-4 me-2" />
