@@ -281,7 +281,11 @@ export default function OfferDetailPage() {
                       {offer.roomOptions.map((opt, idx) => (
                         <tr key={idx} className="border-b last:border-0">
                           {hasRoomTypes && (
-                            <td className="px-3 py-2">{opt.roomType || t("generalPrice")}</td>
+                            <td className="px-3 py-2">
+                              {opt.roomType
+                                ? (locale === "ar" ? opt.roomTypeAr : opt.roomTypeEn) || t(`roomType_${opt.roomType}`)
+                                : t("generalPrice")}
+                            </td>
                           )}
                           <td className="px-3 py-2">{formatCurrency(opt.price, offer.currency || "BHD", locale)}</td>
                           <td className="px-3 py-2 text-center">

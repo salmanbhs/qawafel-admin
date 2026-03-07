@@ -3,7 +3,7 @@ export type PackageStatus = "ACTIVE" | "INACTIVE";
 export type OfferStatus = "PENDING" | "ACTIVE" | "ARCHIVED";
 export type DestinationStatus = "PENDING" | "ACTIVE" | "ARCHIVED";
 export type HotelStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
-export type RoomType = "TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
+export type RoomType = "SINGLE" | "TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
 export type MealType = "BREAKFAST" | "LUNCH" | "DINNER" | "TEA" | "WATER";
 export type MealServiceType = "PARCEL" | "BUFFET";
 export type TransportType = "BUS" | "CAR" | "FLY" | "TRAIN";
@@ -32,6 +32,8 @@ export interface RoomOption {
   id?: string;
   offerId?: string;
   roomType?: RoomType | null;
+  roomTypeAr?: string;
+  roomTypeEn?: string;
   price: number;
   isDefault: boolean;
   createdAt?: string;
@@ -210,18 +212,34 @@ export interface AdminUser {
 
 export interface AuditLog {
   id: string;
-  adminId: string;
-  adminEmail?: string;
+  userId?: string | null;
   action: string;
-  entityType: string;
-  entityId?: string;
-  resourceType?: string;
-  resourceId?: string;
-  details?: string | Record<string, unknown>;
-  changes?: Record<string, unknown>;
-  ipAddress?: string;
-  userAgent?: string;
+  resourceType?: string | null;
+  resourceId?: string | null;
+  changes?: Record<string, unknown> | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  method?: string | null;
+  path?: string | null;
+  statusCode?: number | null;
+  duration?: number | null;
+  requestBody?: Record<string, unknown> | null;
+  queryParams?: Record<string, unknown> | null;
+  errorMessage?: string | null;
+  errorCode?: string | null;
   createdAt: string;
+  user?: {
+    id: string;
+    email: string;
+    fullName?: string | null;
+    role: string;
+  } | null;
+  // legacy fields
+  adminId?: string;
+  adminEmail?: string;
+  entityType?: string;
+  entityId?: string;
+  details?: string | Record<string, unknown>;
 }
 
 export interface OfferImage {
@@ -295,9 +313,9 @@ export interface PreUploadResponse {
     islamicAdvisor?: string | null;
     
     // ✅ Room Type & Room Options
-    roomType?: "TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
+    roomType?: "SINGLE" |"TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
     roomTypeOptions?: Array<{
-      roomType: "TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
+      roomType: "SINGLE" |"TWIN" | "TRIPLE" | "QUAD" | "FAMILY";
       price: number;
       nights?: number;
     }>;
@@ -322,6 +340,11 @@ export interface PreUploadResponse {
     // ✅ Destinations (with enrichment)
     destinationNames?: string[];
     destinationIds?: string[];
+    destinationNightBreakdown?: Array<{
+      destinationName: string;
+      nights: number;
+      destinationId: string;
+    }>;
     destinations?: Array<{
       destinationId: string;
       numberOfNights: number;
@@ -331,6 +354,10 @@ export interface PreUploadResponse {
     // ✅ Hotels (with enrichment)
     hotelNames?: string[];
     hotelIds?: string[];
+    
+    // ✅ Travel Agency (with enrichment)
+    travelAgencyName?: string;
+    travelAgencyId?: string;
   };
 }
 

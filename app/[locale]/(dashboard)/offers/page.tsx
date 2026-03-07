@@ -17,6 +17,12 @@ import {
   Plane,
   Archive,
   ArchiveRestore,
+  Hotel,
+  Utensils,
+  Bus,
+  Car,
+  Train,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -361,7 +367,7 @@ export default function OffersPage() {
               }
             />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {offers.map((offer) => {
                 const defaultPrice =
                   offer.roomOptions?.find((r) => r.isDefault)?.price ??
@@ -373,51 +379,90 @@ export default function OffersPage() {
                   ? offer.destinations.reduce((sum, d) => sum + (d.numberOfNights ?? 0), 0)
                   : null;
 
+                // Get transport icon
+                const getTransportIcon = (type: string) => {
+                  switch (type) {
+                    case "FLY": return <Plane className="h-3 w-3" />;
+                    case "BUS": return <Bus className="h-3 w-3" />;
+                    case "CAR": return <Car className="h-3 w-3" />;
+                    case "TRAIN": return <Train className="h-3 w-3" />;
+                    default: return <Bus className="h-3 w-3" />;
+                  }
+                };
+
                 return (
                   <Card
                     key={offer.id}
-                    className="flex flex-col overflow-hidden hover:shadow-md transition-shadow"
+                    className="flex flex-col overflow-hidden hover:shadow-lg transition-all duration-200 group"
                   >
-                    {/* Banner image */}
-                    <div className="relative h-36 bg-muted flex-shrink-0">
+                    {/* Image with 9:16 aspect ratio */}
+                    <div className="relative w-full aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
                       {offer.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={offer.imageUrl}
-                          alt=""
-                          className="w-full h-full object-cover"
+                          alt={offer.nameAr || offer.nameEn || "Offer"}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
                         <div className="flex items-center justify-center h-full">
-                          <Package className="h-10 w-10 text-muted-foreground/30" />
+                          <Package className="h-16 w-16 text-muted-foreground/20" />
                         </div>
                       )}
-                      <div className="absolute top-2 end-2 flex items-center gap-1.5">
-                        {offer.isFeatured && (
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        )}
+                      {/* Overlay badges */}
+                      <div className="absolute top-2 start-2 end-2 flex items-start justify-between gap-2">
+                        <div className="flex flex-col gap-1.5">
+                          {offer.isFeatured && (
+                            <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg">
+                              <Star className="h-3 w-3 fill-current me-1" />
+                              {locale === "ar" ? "مميز" : "Featured"}
+                            </Badge>
+                          )}
+                          {hasFlight && (
+                            <Badge className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg">
+                              <Plane className="h-3 w-3 me-1" />
+                              {locale === "ar" ? "طيران" : "Flight"}
+                            </Badge>
+                          )}
+                        </div>
                         <StatusBadge status={offer.status} />
                       </div>
+                      {/* Price overlay */}
+                      {defaultPrice != null && (
+                        <div className="absolute bottom-0 start-0 end-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-3">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-2xl font-bold text-white">
+                              {formatCurrency(
+                                defaultPrice,
+                                offer.currency || "BHD",
+                                locale
+                              )}
+                            </span>
+                            {offer.roomOptions && offer.roomOptions.length > 1 && (
+                              <span className="text-xs text-white/80">
+                                {locale === "ar"
+                                  ? `+${offer.roomOptions.length - 1} خيار`
+                                  : `+${offer.roomOptions.length - 1} more`}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex flex-col flex-1 p-4 gap-3">
-                      {/* Name */}
+                    <div className="flex flex-col flex-1 p-3 gap-2.5">
+                      {/* Title */}
                       <div>
-                        <h3 className="font-semibold text-base leading-snug line-clamp-2">
-                          {offer.nameAr || offer.nameEn || offer.name || "—"}
+                        <h3 className="font-semibold text-sm leading-tight line-clamp-2 min-h-[2.5rem]">
+                          {offer.nameAr || offer.nameEn || offer.name || ""}
                         </h3>
-                        {offer.nameEn && offer.nameAr && (
-                          <p className="text-xs text-muted-foreground mt-0.5 truncate dir-ltr">
-                            {offer.nameEn}
-                          </p>
-                        )}
                       </div>
 
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-2 text-xs">
                         {/* Agency */}
                         {offer.travelAgency && (
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="flex items-center gap-1.5">
+                            <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                             <span className="truncate text-muted-foreground">
                               {offer.travelAgency.nameAr ||
                                 offer.travelAgency.nameEn ||
@@ -426,91 +471,119 @@ export default function OffersPage() {
                           </div>
                         )}
 
-                        {/* Destinations */}
-                        {offer.destinations && offer.destinations.length > 0 && (
-                          <div className="flex items-start gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                            <span className="leading-snug">
-                              {offer.destinations
-                                .map(
-                                  (d) =>
-                                    d.destination.nameAr ||
-                                    d.destination.nameEn ||
-                                    d.destination.name
-                                )
-                                .join(" · ")}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Dates + nights */}
-                        {(offer.checkInDate || offer.numberOfDays) && (
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <span className="text-muted-foreground">
-                              {offer.checkInDate &&
-                                formatDate(offer.checkInDate, locale)}
-                              {offer.checkOutDate &&
-                                ` → ${formatDate(offer.checkOutDate, locale)}`}
-                              {(totalNights ?? offer.numberOfDays) ? (
-                                <span className="ms-1.5 text-xs font-medium text-foreground">
-                                  ({totalNights ?? offer.numberOfDays}{" "}
-                                  {locale === "ar" ? "ليلة" : "nights"})
+                        {/* Dates + Duration */}
+                        {offer.checkInDate && (
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <span className="text-muted-foreground text-[11px]">
+                              {formatDate(offer.checkInDate, locale)}
+                              {totalNights && (
+                                <span className="font-medium text-foreground ms-1">
+                                  ({totalNights} {locale === "ar" ? "ليالي" : "nights"})
                                 </span>
-                              ) : null}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Price */}
-                        {defaultPrice != null && (
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="text-lg font-bold">
-                              {formatCurrency(
-                                defaultPrice,
-                                offer.currency || "BHD",
-                                locale
                               )}
                             </span>
-                            {offer.roomOptions && offer.roomOptions.length > 1 && (
-                              <span className="text-xs text-muted-foreground">
-                                {locale === "ar"
-                                  ? `+ ${offer.roomOptions.length - 1} خيارات`
-                                  : `+ ${offer.roomOptions.length - 1} option${offer.roomOptions.length - 1 !== 1 ? "s" : ""}`}
-                              </span>
-                            )}
+                          </div>
+                        )}
+
+                        {/* Destinations with nights */}
+                        {offer.destinations && offer.destinations.length > 0 && (
+                          <div className="flex items-start gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                            <div className="flex flex-wrap gap-1 leading-tight">
+                              {offer.destinations.map((d, idx) => (
+                                <span key={d.destinationId} className="text-[11px]">
+                                  {d.destination.nameAr || d.destination.nameEn || d.destination.name}
+                                  {d.numberOfNights > 0 && (
+                                    <span className="text-muted-foreground">
+                                      {" "}({d.numberOfNights})
+                                    </span>
+                                  )}
+                                  {idx < (offer.destinations?.length ?? 0) - 1 && (
+                                    <span className="text-muted-foreground mx-1">•</span>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Hotels */}
+                        {offer.hotels && offer.hotels.length > 0 && (
+                          <div className="flex items-start gap-1.5">
+                            <Hotel className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                            <div className="flex flex-col gap-0.5">
+                              {offer.hotels.slice(0, 2).map((h) => (
+                                <span key={h.hotelId} className="text-[11px] leading-tight">
+                                  {h.hotel.name}
+                                  {h.hotel.starRating && (
+                                    <span className="text-yellow-500 ms-1">
+                                      {"★".repeat(h.hotel.starRating)}
+                                    </span>
+                                  )}
+                                </span>
+                              ))}
+                              {offer.hotels.length > 2 && (
+                                <span className="text-[11px] text-muted-foreground">
+                                  +{offer.hotels.length - 2} {locale === "ar" ? "فندق" : "more"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Meals */}
+                        {offer.meals && offer.meals.length > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <Utensils className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <div className="flex flex-wrap gap-1">
+                              {offer.meals.slice(0, 3).map((m, idx) => (
+                                <span key={idx} className="text-[11px] text-muted-foreground">
+                                  {locale === "ar" 
+                                    ? m.mealType === "BREAKFAST" ? "إفطار"
+                                      : m.mealType === "LUNCH" ? "غداء"
+                                      : m.mealType === "DINNER" ? "عشاء"
+                                      : m.mealType
+                                    : m.mealType.toLowerCase()}
+                                  {idx < Math.min(offer.meals?.length ?? 0, 3) - 1 && " • "}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Transports */}
+                        {offer.transports && offer.transports.length > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            {getTransportIcon(offer.transports[0].transportType)}
+                            <span className="text-[11px] text-muted-foreground truncate">
+                              {offer.transports[0].fromLocation} → {offer.transports[0].toLocation}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Islamic Program */}
+                        {offer.includesIslamicProgram && offer.islamicAdvisor && (
+                          <div className="flex items-start gap-1.5">
+                            <User className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                            <span className="text-[11px] text-muted-foreground leading-tight line-clamp-1">
+                              {offer.islamicAdvisor}
+                            </span>
                           </div>
                         )}
                       </div>
 
-                      {/* Flight badge */}
-                      {hasFlight && (
-                        <div className="flex items-center gap-2 rounded-md bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 px-3 py-1.5">
-                          <Plane className="h-4 w-4 shrink-0" />
-                          <span className="text-sm font-medium">
-                            {locale === "ar" ? "يشمل رحلة طيران" : "Includes flight"}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Inclusions chips */}
-                      {(offer.includesVisa ||
-                        offer.includesInsurance ||
-                        offer.includesIslamicProgram) && (
-                        <div className="flex flex-wrap gap-1.5">
+                      {/* Inclusions badges */}
+                      {(offer.includesVisa || offer.includesInsurance) && (
+                        <div className="flex flex-wrap gap-1">
                           {offer.includesVisa && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-[10px] py-0 h-5">
                               {locale === "ar" ? "تأشيرة" : "Visa"}
                             </Badge>
                           )}
                           {offer.includesInsurance && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-[10px] py-0 h-5">
                               {locale === "ar" ? "تأمين" : "Insurance"}
-                            </Badge>
-                          )}
-                          {offer.includesIslamicProgram && (
-                            <Badge variant="secondary" className="text-xs">
-                              {locale === "ar" ? "برنامج ديني" : "Islamic Program"}
                             </Badge>
                           )}
                         </div>
@@ -520,48 +593,47 @@ export default function OffersPage() {
                       <div className="flex-1" />
 
                       {/* Actions */}
-                      <div className="flex flex-col gap-2 pt-3 border-t mt-1">
-                        <div className="flex gap-2">
-                          <Link href={`/${locale}/offers/${offer.id}`} className="flex-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full gap-1.5"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              {locale === "ar" ? "عرض" : "View"}
-                            </Button>
-                          </Link>
-                          {(isAdmin || offer.travelAgencyId === myAgencyId) && (
-                            <>
-                              {offer.status !== "ARCHIVED" && (
+                      <div className="flex gap-1.5 pt-2 border-t">
+                        <Link href={`/${locale}/offers/${offer.id}`} className="flex-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full h-8 text-xs gap-1"
+                          >
+                            <Eye className="h-3 w-3" />
+                            {locale === "ar" ? "عرض" : "View"}
+                          </Button>
+                        </Link>
+                        {(isAdmin || offer.travelAgencyId === myAgencyId) && (
+                          <>
+                            {offer.status !== "ARCHIVED" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-2"
+                                onClick={() => handleArchive(offer.id)}
+                                disabled={archiveOffer.isPending}
+                                title={t("archiveOffer")}
+                              >
+                                <Archive className="h-3 w-3" />
+                              </Button>
+                            )}
+                            <ConfirmDialog
+                              title={t("deleteConfirm")}
+                              description={t("deleteWarning")}
+                              onConfirm={() => handleDelete(offer.id)}
+                              trigger={
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleArchive(offer.id)}
-                                  disabled={archiveOffer.isPending}
-                                  title={t("archiveOffer")}
+                                  className="h-8 px-2 text-destructive hover:text-destructive"
                                 >
-                                  <Archive className="h-3.5 w-3.5" />
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
-                              )}
-                              <ConfirmDialog
-                                title={t("deleteConfirm")}
-                                description={t("deleteWarning")}
-                                onConfirm={() => handleDelete(offer.id)}
-                                trigger={
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-destructive hover:text-destructive"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                }
-                              />
-                            </>
-                          )}
-                        </div>
+                              }
+                            />
+                          </>
+                        )}
                       </div>
                     </div>
                   </Card>

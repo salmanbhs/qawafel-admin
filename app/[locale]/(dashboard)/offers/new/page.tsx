@@ -4,24 +4,31 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowLeft, ArrowRight, Building2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateOffer } from "@/hooks/use-offers";
 import { useAgencies } from "@/hooks/use-agencies";
 import { useAuthStore } from "@/store/auth.store";
 import { getApiErrorMessage } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import type { OfferFormValues } from "@/components/offers/OfferForm";
 
 const OfferForm = dynamic(() => import("@/components/offers/OfferForm").then(mod => ({ default: mod.OfferForm })), {
@@ -47,6 +54,7 @@ export default function NewOfferPage() {
   const [selectedAgencyId, setSelectedAgencyId] = useState<string>(
     isAgencyRole && myAgencyId ? myAgencyId : ""
   );
+  const [agencyPickerOpen, setAgencyPickerOpen] = useState(false);
 
   const { data: agenciesData, isLoading: agenciesLoading } = useAgencies({
     limit: 100,
@@ -58,7 +66,10 @@ export default function NewOfferPage() {
   const resolvedAgencyId = isAdmin ? selectedAgencyId : myAgencyId;
 
   async function handleSubmit(values: OfferFormValues) {
-    if (!resolvedAgencyId) return;
+    if (!resolvedAgencyId) {
+      toast.error(locale === "ar" ? "اختر وكالة قبل إنشاء العرض" : "Select an agency before creating the offer");
+      return;
+    }
     try {
       const { hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, forceCreate, ...rest } = values as any;
       await createOffer.mutateAsync({
@@ -87,7 +98,10 @@ export default function NewOfferPage() {
   }
 
   async function handleSubmitAndContinue(values: OfferFormValues) {
-    if (!resolvedAgencyId) return;
+    if (!resolvedAgencyId) {
+      toast.error(locale === "ar" ? "اختر وكالة قبل إنشاء العرض" : "Select an agency before creating the offer");
+      return;
+    }
     try {
       const { hotelIds, destinations, imageUrl, roomOptions, meals, transports, numberOfDays, forceCreate, ...rest } = values as any;
       await createOffer.mutateAsync({
@@ -140,47 +154,81 @@ export default function NewOfferPage() {
             {agenciesLoading ? (
               <Skeleton className="h-9 w-64" />
             ) : (
-              <Select
-                value={selectedAgencyId}
-                onValueChange={setSelectedAgencyId}
-              >
-                <SelectTrigger className="w-64">
-                  <SelectValue
-                    placeholder={
-                      locale === "ar"
-                        ? "اختر وكالة سفر..."
-                        : "Choose a travel agency..."
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {agencies.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.nameAr || a.nameEn || a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={agencyPickerOpen} onOpenChange={setAgencyPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={agencyPickerOpen}
+                    className="w-full max-w-md justify-between"
+                  >
+                    {selectedAgencyId
+                      ? (agencies.find((a) => a.id === selectedAgencyId)?.nameAr ||
+                        agencies.find((a) => a.id === selectedAgencyId)?.nameEn ||
+                        agencies.find((a) => a.id === selectedAgencyId)?.name)
+                      : (locale === "ar" ? "اختر وكالة سفر..." : "Choose a travel agency...")}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder={locale === "ar" ? "ابحث عن وكالة..." : "Search agencies..."} />
+                    <CommandList>
+                      <CommandEmpty>
+                        {locale === "ar" ? "لا توجد نتائج" : "No agencies found"}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {agencies.map((a) => {
+                          const label = a.nameAr || a.nameEn || a.name;
+                          return (
+                            <CommandItem
+                              key={a.id}
+                              value={label}
+                              onSelect={() => {
+                                setSelectedAgencyId(a.id);
+                                setAgencyPickerOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedAgencyId === a.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {label}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Offer form — shown once agency is resolved */}
-      {resolvedAgencyId ? (
+      {/* Offer form — always visible for admin so image upload/OCR can start early */}
+      {(resolvedAgencyId || isAdmin) ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">{t("offerDetails")}</CardTitle>
           </CardHeader>
           <CardContent>
             <OfferForm
-              travelAgencyId={resolvedAgencyId}
+              travelAgencyId={resolvedAgencyId || ""}
               onSubmit={handleSubmit}
               onSubmitAndContinue={handleSubmitAndContinue}
               isLoading={createOffer.isPending}
               submitLabel={t("createOffer")}
               submitAndContinueLabel={t("createAndAddAnother")}
               isSystemAdmin={isAdmin}
+              onAgencyDetected={(agencyId) => {
+                if (isAdmin) {
+                  setSelectedAgencyId(agencyId);
+                }
+              }}
             />
           </CardContent>
         </Card>

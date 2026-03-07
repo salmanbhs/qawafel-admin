@@ -355,6 +355,7 @@ export function DestinationForm({
               />
             </div>
           </div>
+        </div>
         )}
 
         <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">

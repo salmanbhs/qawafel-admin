@@ -69,17 +69,36 @@ export function useAuditLogs(params?: {
   userId?: string;
   action?: string;
   resourceType?: string;
-  page?: number;
-  limit?: number;
+  method?: string;
+  path?: string;
+  statusCode?: number;
+  minStatus?: number;
+  maxStatus?: number;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
   skip?: number;
   take?: number;
 }) {
   return useQuery({
     queryKey: ["audit-logs", params],
-    queryFn: () =>
-      apiGet<PaginatedResponse<AuditLog>>(
-        "/admin/audit-logs",
-        { skip: 0, take: params?.limit || 25, ...(params?.page && { skip: ((params.page - 1) * (params.limit || 25)) }), ...params }
-      ),
+    queryFn: () => {
+      const query: Record<string, unknown> = {
+        skip: params?.skip ?? 0,
+        take: params?.take ?? 25,
+      };
+      if (params?.userId)       query.userId = params.userId;
+      if (params?.action)       query.action = params.action;
+      if (params?.resourceType) query.resourceType = params.resourceType;
+      if (params?.method)       query.method = params.method;
+      if (params?.path)         query.path = params.path;
+      if (params?.statusCode != null) query.statusCode = params.statusCode;
+      if (params?.minStatus != null)  query.minStatus = params.minStatus;
+      if (params?.maxStatus != null)  query.maxStatus = params.maxStatus;
+      if (params?.startDate)    query.startDate = params.startDate;
+      if (params?.endDate)      query.endDate = params.endDate;
+      if (params?.search)       query.search = params.search;
+      return apiGet<PaginatedResponse<AuditLog>>("/admin/audit-logs", query);
+    },
   });
 }

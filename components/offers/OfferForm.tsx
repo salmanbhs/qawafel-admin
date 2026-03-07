@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,12 +41,78 @@ import { toast } from "sonner";
 import type { Offer, RoomOption } from "@/types/api";
 
 //  constants 
-const ROOM_TYPES      = ["TWIN", "TRIPLE", "QUAD", "FAMILY"] as const;
+const ROOM_TYPES      = ["SINGLE" ,"TWIN", "TRIPLE", "QUAD", "FAMILY"] as const;
 const MEAL_TYPES      = ["BREAKFAST", "LUNCH", "DINNER", "TEA", "WATER"] as const;
 const SERVICE_TYPES   = ["BUFFET", "PARCEL"] as const;
 const TRANSPORT_TYPES = ["FLY", "BUS", "CAR", "TRAIN"] as const;
 const OFFER_STATUSES  = ["PENDING", "ACTIVE", "ARCHIVED"] as const;
 const MEAL_NEEDS_SERVICE = new Set(["BREAKFAST", "LUNCH", "DINNER"]);
+
+// ✅ Helper: convert YYYY-MM-DD ↔ DD/MM/YYYY
+function isoToDisplay(iso: string): string {
+  if (!iso) return "";
+  const parts = iso.split("-");
+  if (parts.length !== 3) return iso;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+function displayToIso(display: string): string {
+  if (!display) return "";
+  const parts = display.split("/");
+  if (parts.length !== 3) return "";
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
+// ✅ Date input component that forces DD/MM/YYYY format
+function DateInput({
+  value,
+  onChange,
+  onBlur,
+  label,
+}: {
+  value: string; // YYYY-MM-DD
+  onChange: (iso: string) => void;
+  onBlur?: () => void;
+  label?: string;
+}) {
+  const [displayValue, setDisplayValue] = useState(isoToDisplay(value));
+
+  // Sync display when form value changes externally (e.g. auto-calculation)
+  useEffect(() => {
+    const expected = isoToDisplay(value);
+    if (expected !== displayValue) {
+      setDisplayValue(expected);
+    }
+    // Only re-sync when the ISO value changes, not displayValue
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/[^\d]/g, ""); // digits only
+    // Auto-insert slashes
+    if (raw.length > 4) raw = raw.slice(0, 2) + "/" + raw.slice(2, 4) + "/" + raw.slice(4, 8);
+    else if (raw.length > 2) raw = raw.slice(0, 2) + "/" + raw.slice(2);
+
+    setDisplayValue(raw);
+
+    // Convert to ISO when complete DD/MM/YYYY
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+      const iso = displayToIso(raw);
+      onChange(iso);
+    }
+  };
+
+  return (
+    <Input
+      type="text"
+      dir="ltr"
+      placeholder="DD/MM/YYYY"
+      maxLength={10}
+      value={displayValue}
+      onChange={handleChange}
+      onBlur={onBlur}
+    />
+  );
+}
 
 //  zod schemas 
 const roomOptionSchema = z.object({
@@ -68,8 +134,8 @@ const mealSchema = z.object({
 
 const transportSchema = z.object({
   transportType:  z.enum(TRANSPORT_TYPES),
-  fromLocation:   z.string().min(1),
-  toLocation:     z.string().min(1),
+  fromLocation:   z.string().optional().default(""),
+  toLocation:     z.string().optional().default(""),
   isDirectFlight: z.boolean().optional().nullable(),
   carType:        z.string().optional().nullable(),
   order:          z.number().int().min(0),
@@ -115,6 +181,7 @@ interface OfferFormProps {
   submitLabel?: string;
   submitAndContinueLabel?: string;
   isSystemAdmin?: boolean;
+  onAgencyDetected?: (agencyId: string) => void;
 }
 
 //  component 
@@ -127,6 +194,7 @@ export function OfferForm({
   submitLabel,
   submitAndContinueLabel,
   isSystemAdmin = false,
+  onAgencyDetected,
 }: OfferFormProps) {
   const t  = useTranslations("offers");
   const tc = useTranslations("common");
@@ -199,6 +267,38 @@ export function OfferForm({
   const selectedDestIds = (watchedDestinations || []).map((d) => d.destinationId);
   const hasDestinations  = selectedDestIds.length > 0;
 
+  // ✅ Helper function to add days to a date string (YYYY-MM-DD format)
+  const addDaysToDate = (dateStr: string, days: number): string => {
+    if (!dateStr || days <= 0) return "";
+    const [year, month, day] = dateStr.split("-").map(x => parseInt(x, 10));
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return "";
+    
+    // Create local date (avoiding timezone conversion)
+    const date = new Date(year, month - 1, day);
+    // Add the days
+    date.setDate(date.getDate() + days);
+    
+    // Format back to YYYY-MM-DD
+    const resultYear = date.getFullYear();
+    const resultMonth = String(date.getMonth() + 1).padStart(2, "0");
+    const resultDay = String(date.getDate()).padStart(2, "0");
+    return `${resultYear}-${resultMonth}-${resultDay}`;
+  };
+
+  // ✅ Auto-calculate checkOutDate when checkInDate or numberOfDays changes
+  const watchedCheckInDate = useWatch({ control: form.control, name: "checkInDate" });
+  const watchedNumberOfDays = useWatch({ control: form.control, name: "numberOfDays" });
+
+  useEffect(() => {
+    const days = Number(watchedNumberOfDays);
+    if (watchedCheckInDate && !isNaN(days) && days > 0) {
+      const newCheckOutDate = addDaysToDate(watchedCheckInDate, days);
+      if (newCheckOutDate) {
+        form.setValue("checkOutDate", newCheckOutDate);
+      }
+    }
+  }, [watchedCheckInDate, watchedNumberOfDays, form]);
+
   const { data: hotelsData, isLoading: hotelsLoading } = useHotels({
     travelAgencyId,
     limit: 100,
@@ -269,7 +369,7 @@ export function OfferForm({
           const currentRooms = form.getValues("roomOptions") || [];
           if (currentRooms.length > 0) {
             form.setValue("roomOptions.0.price", parsed.price);
-            if (parsed.roomType && ["TWIN", "TRIPLE", "QUAD", "FAMILY"].includes(parsed.roomType)) {
+            if (parsed.roomType && ["SINGLE", "TWIN", "TRIPLE", "QUAD", "FAMILY"].includes(parsed.roomType)) {
               form.setValue("roomOptions.0.roomType", parsed.roomType as any);
             }
           }
@@ -296,8 +396,14 @@ export function OfferForm({
           })));
         }
         
-        // ✅ Map destinations (structured array or ID-based)
-        if (parsed.destinations && parsed.destinations.length > 0) {
+        // ✅ Map destinations (direct from night breakdown or structured array)
+        if (parsed.destinationNightBreakdown && parsed.destinationNightBreakdown.length > 0) {
+          form.setValue("destinations", parsed.destinationNightBreakdown.map((d, idx) => ({
+            destinationId: d.destinationId,
+            numberOfNights: d.nights,
+            sequenceOrder: idx + 1,
+          })));
+        } else if (parsed.destinations && parsed.destinations.length > 0) {
           form.setValue("destinations", parsed.destinations.map(d => ({
             destinationId: d.destinationId,
             numberOfNights: d.numberOfNights,
@@ -315,6 +421,11 @@ export function OfferForm({
         // ✅ Map hotels (if hotelIds provided)
         if (parsed.hotelIds && parsed.hotelIds.length > 0) {
           form.setValue("hotelIds", parsed.hotelIds);
+        }
+        
+        // ✅ Map travel agency (if detected and callback provided)
+        if (parsed.travelAgencyId && onAgencyDetected) {
+          onAgencyDetected(parsed.travelAgencyId);
         }
         
         toast.success(t("imageUploadedWithData"));
@@ -789,7 +900,7 @@ export function OfferForm({
                               <SelectTrigger className="h-8 w-32"><SelectValue placeholder={t("roomType")} /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">{t("generalPrice")}</SelectItem>
-                                {ROOM_TYPES.map((rt) => <SelectItem key={rt} value={rt}>{rt}</SelectItem>)}
+                                {ROOM_TYPES.map((rt) => <SelectItem key={rt} value={rt}>{t(`roomType_${rt}`)}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </td>
@@ -986,22 +1097,45 @@ export function OfferForm({
         <div className="grid gap-4 sm:grid-cols-3">
           <FormField control={form.control} name="checkInDate" render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("checkInDate")}</FormLabel>
-              <FormControl><Input type="date" dir="ltr" {...field} /></FormControl>
+              <FormLabel>{t("checkInDate")} (DD/MM/YYYY)</FormLabel>
+              <FormControl>
+                <DateInput
+                  value={field.value || ""}
+                  onChange={(iso) => field.onChange(iso)}
+                  onBlur={field.onBlur}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="checkOutDate" render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("checkOutDate")}</FormLabel>
-              <FormControl><Input type="date" dir="ltr" {...field} /></FormControl>
+              <FormLabel>{t("checkOutDate")} (DD/MM/YYYY)</FormLabel>
+              <FormControl>
+                <DateInput
+                  value={field.value || ""}
+                  onChange={(iso) => field.onChange(iso)}
+                  onBlur={field.onBlur}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="numberOfDays" render={({ field }) => (
             <FormItem>
               <FormLabel>{t("numberOfDays")}</FormLabel>
-              <FormControl><Input type="number" min="1" dir="ltr" placeholder="10" {...field} /></FormControl>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="1"
+                  dir="ltr"
+                  placeholder="10"
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                  }}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -1086,7 +1220,7 @@ export function OfferForm({
                   <p className="text-xs font-medium text-muted-foreground mb-1">{t("officeNumbers") || "Office Numbers"}</p>
                   <div className="flex flex-wrap gap-2">
                     {agency.officeNumbers.map((num, idx) => (
-                      <Badge key={idx} variant="outline">{num}</Badge>
+                      <Badge key={idx} variant="outline" dir="ltr">{num}</Badge>
                     ))}
                   </div>
                 </div>
@@ -1098,7 +1232,7 @@ export function OfferForm({
                   <p className="text-xs font-medium text-muted-foreground mb-1">{t("whatsappNumbers") || "WhatsApp Numbers"}</p>
                   <div className="flex flex-wrap gap-2">
                     {agency.whatsappNumbers.map((num, idx) => (
-                      <Badge key={idx} variant="secondary">{num}</Badge>
+                      <Badge key={idx} variant="secondary" dir="ltr">{num}</Badge>
                     ))}
                   </div>
                 </div>
