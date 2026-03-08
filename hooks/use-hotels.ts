@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
 import type { Hotel, PaginatedResponse } from "@/types/api";
 
@@ -31,6 +31,7 @@ export function useHotels(params?: {
       return apiGet<PaginatedResponse<Hotel>>("/hotels", queryParams);
     },
     enabled: params?.enabled !== false, // Disable query by default if enabled is false
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch, apiDelete, apiPostForm } from "@/lib/api";
 import type { Destination, PaginatedResponse, DestinationImageUploadResponse } from "@/types/api";
 
@@ -11,6 +11,7 @@ export function useDestinations(params?: { page?: number; limit?: number; enable
         limit: params?.limit || 20,
       }),
     enabled: params?.enabled !== false, // Disable query by default if enabled is false
+    placeholderData: keepPreviousData,
   });
 }
 

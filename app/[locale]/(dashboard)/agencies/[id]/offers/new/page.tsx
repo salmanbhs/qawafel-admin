@@ -6,10 +6,15 @@ import { useParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { OfferForm, type OfferFormValues } from "@/components/offers/OfferForm";
+import type { OfferFormValues } from "@/components/offers/OfferForm";
 import { useCreateOffer } from "@/hooks/use-offers";
+
+const OfferForm = dynamic(() => import("@/components/offers/OfferForm").then(mod => ({ default: mod.OfferForm })), {
+  loading: () => <div className="flex items-center justify-center py-20"><div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" /></div>,
+});
 import { useAuthStore } from "@/store/auth.store";
 import { getApiErrorMessage } from "@/lib/api";
 

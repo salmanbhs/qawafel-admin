@@ -485,7 +485,10 @@
     "agency": "Travel Agency",
     "view": "View",
     "dates": "Dates",
-    "pricing": "Pricing"
+    "pricing": "Pricing",
+    "somethingWentWrong": "Something went wrong",
+    "errorPageDescription": "An unexpected error occurred. Please try again.",
+    "tryAgain": "Try Again"
   },
   "hotels": {
     "title": "Hotels",

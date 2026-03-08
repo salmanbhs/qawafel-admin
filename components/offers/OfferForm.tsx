@@ -5,6 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import {
   Loader2, Upload, ImageIcon, X, ChevronsUpDown, Check, Plus, Trash2,
   ArrowUp, ArrowDown,
@@ -555,8 +556,7 @@ export function OfferForm({
                 {previewUrl ? (
                   <div className="space-y-3">
                     <div className="relative rounded-lg border overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={previewUrl} alt="Offer" className="w-full h-auto max-h-[70vh] object-contain bg-muted" />
+                      <Image src={previewUrl} alt="Offer" width={600} height={1000} className="w-full h-auto max-h-[70vh] object-contain bg-muted" />
                       <Button type="button" variant="destructive" size="icon"
                         className="absolute top-2 end-2 h-8 w-8 shadow-lg" onClick={clearImage}
                         disabled={deletePreUpload.isPending}>

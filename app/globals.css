@@ -61,11 +61,11 @@ body {
 }
 
 [dir="rtl"] {
-  font-family: "Noto Sans Arabic", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-noto-arabic), "Segoe UI", system-ui, sans-serif;
 }
 
 [dir="ltr"] {
-  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-inter), "Segoe UI", system-ui, sans-serif;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }

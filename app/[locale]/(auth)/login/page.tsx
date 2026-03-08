@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,6 +39,31 @@ export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [showPwd, setShowPwd] = useState(false);
+  const [failCount, setFailCount] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState(0);
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startLockout = useCallback((seconds: number) => {
+    const until = Date.now() + seconds * 1000;
+    setLockoutUntil(until);
+    setLockoutRemaining(seconds);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      const remaining = Math.ceil((until - Date.now()) / 1000);
+      if (remaining <= 0) {
+        setLockoutRemaining(0);
+        setLockoutUntil(0);
+        if (timerRef.current) clearInterval(timerRef.current);
+      } else {
+        setLockoutRemaining(remaining);
+      }
+    }, 1000);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -46,6 +71,7 @@ export default function LoginPage() {
   });
 
   async function onSubmit(values: LoginForm) {
+    if (Date.now() < lockoutUntil) return;
     try {
       const data = await apiPost<{
         user: AuthUser;
@@ -55,9 +81,16 @@ export default function LoginPage() {
 
       localStorage.setItem("locale", locale);
       setAuth(data.user, data.accessToken, data.refreshToken);
+      setFailCount(0);
       toast.success(locale === "ar" ? "تم تسجيل الدخول بنجاح" : "Logged in successfully");
       router.push(`/${locale}`);
     } catch (err) {
+      const newCount = failCount + 1;
+      setFailCount(newCount);
+      // Progressive lockout: 5s after 3 fails, 15s after 5, 30s after 7+
+      if (newCount >= 7) startLockout(30);
+      else if (newCount >= 5) startLockout(15);
+      else if (newCount >= 3) startLockout(5);
       toast.error(getApiErrorMessage(err));
     }
   }
@@ -132,10 +165,12 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitting || lockoutRemaining > 0}
             >
               {form.formState.isSubmitting ? (
                 <><Loader2 className="me-2 h-4 w-4 animate-spin" /> {tc("loading")}</>
+              ) : lockoutRemaining > 0 ? (
+                `${t("loginButton")} (${lockoutRemaining}s)`
               ) : (
                 t("loginButton")
               )}

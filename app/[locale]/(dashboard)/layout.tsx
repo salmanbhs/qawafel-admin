@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useLocale } from "next-intl";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { NavigationProgress } from "@/components/layout/NavigationProgress";
 import { useAuthStore } from "@/store/auth.store";
 import { msUntilExpiry } from "@/lib/utils";
 import { refreshTokens } from "@/lib/auth-refresh";
@@ -64,6 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden bg-[hsl(var(--background))]">
+      <NavigationProgress />
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:flex-shrink-0">
         <Sidebar />

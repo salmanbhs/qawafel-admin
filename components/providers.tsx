@@ -26,7 +26,7 @@ export function Providers({ children, locale = "en" }: { children: React.ReactNo
     <QueryClientProvider client={queryClient}>
       {children}
       <Toaster
-        position="top-center"
+        position="bottom-right"
         richColors
         toastOptions={{
           classNames: {

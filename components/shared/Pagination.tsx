@@ -12,12 +12,19 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
   const t = useTranslations("common");
   if (totalPages <= 1) return null;
 
+  const handlePageChange = (newPage: number) => {
+    onPageChange(newPage);
+    // Scroll the main content area to top smoothly
+    const main = document.querySelector("main");
+    main?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="flex items-center justify-end gap-2 pt-4">
       <Button
         variant="outline"
         size="sm"
-        onClick={() => onPageChange(page - 1)}
+        onClick={() => handlePageChange(page - 1)}
         disabled={page <= 1}
       >
         <ChevronRight className="h-4 w-4" />
@@ -28,7 +35,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
       <Button
         variant="outline"
         size="sm"
-        onClick={() => onPageChange(page + 1)}
+        onClick={() => handlePageChange(page + 1)}
         disabled={page >= totalPages}
       >
         <ChevronLeft className="h-4 w-4" />

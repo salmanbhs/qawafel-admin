@@ -481,7 +481,10 @@
     "agency": "الوكالة السياحية",
     "view": "عرض",
     "dates": "التواريخ",
-    "pricing": "التسعير"
+    "pricing": "الأسعار",
+    "somethingWentWrong": "حدث خطأ ما",
+    "errorPageDescription": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+    "tryAgain": "حاول مرة أخرى"
   },
   "hotels": {
     "title": "الفنادق",

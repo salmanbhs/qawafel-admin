@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiPatch, apiDelete, apiPostForm } from "@/lib/api";
 import type {
@@ -16,6 +16,7 @@ export function useAgencies(params?: { page?: number; limit?: number; enabled?: 
         limit: params?.limit || 20,
       }),
     enabled: params?.enabled !== false, // Disable query by default if enabled is false
+    placeholderData: keepPreviousData,
   });
 }
 

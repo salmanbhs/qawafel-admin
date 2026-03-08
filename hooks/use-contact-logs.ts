@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { apiGet } from "@/lib/api";
 import type { ContactLog, PaginatedResponse } from "@/types/api";
 
@@ -17,6 +17,7 @@ export function useContactLogs(params?: {
         ...(params?.offerId && { offerId: params.offerId }),
         ...(params?.search && { search: params.search }),
       }),
+    placeholderData: keepPreviousData,
   });
 }
 

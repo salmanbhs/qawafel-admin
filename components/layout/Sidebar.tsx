@@ -184,12 +184,15 @@ export function Sidebar({ onClose }: SidebarProps) {
               href={item.href}
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 isActive(item.href, item.exact)
-                  ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+                  ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-sm"
                   : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
               )}
             >
+              {isActive(item.href, item.exact) && (
+                <span className="absolute start-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-e-full bg-[hsl(var(--primary-foreground))]" />
+              )}
               <item.icon className="h-4 w-4 shrink-0" />
               {item.label}
             </Link>
@@ -211,12 +214,15 @@ export function Sidebar({ onClose }: SidebarProps) {
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   isActive(item.href)
-                    ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+                    ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-sm"
                     : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
                 )}
               >
+                {isActive(item.href) && (
+                  <span className="absolute start-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-e-full bg-[hsl(var(--primary-foreground))]" />
+                )}
                 <item.icon className="h-4 w-4 shrink-0" />
                 {item.label}
               </Link>

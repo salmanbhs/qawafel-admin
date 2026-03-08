@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Package,
@@ -398,11 +399,12 @@ export default function OffersPage() {
                     {/* Image with 9:16 aspect ratio */}
                     <div className="relative w-full aspect-[9/16] bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
                       {offer.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           src={offer.imageUrl}
                           alt={offer.nameAr || offer.nameEn || "Offer"}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 16vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
                         <div className="flex items-center justify-center h-full">

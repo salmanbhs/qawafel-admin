@@ -1,32 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch, apiDelete, apiPostForm } from "@/lib/api";
 import type { Offer, PaginatedResponse, OfferImage, ImageUploadResponse, PreUploadResponse, CreateOfferPayload, UpdateOfferPayload } from "@/types/api";
-
-function normalizeIsoDate(value?: string): string | undefined {
-  if (!value) return value;
-
-  // Backend expects strict ISO 8601. Convert date-only input from HTML date fields.
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return `${value}T00:00:00.000Z`;
-  }
-
-  const parsed = new Date(value);
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed.toISOString();
-  }
-
-  return value;
-}
-
-function normalizeOfferDates<T extends { checkInDate?: string; checkOutDate?: string }>(
-  payload: T
-): T {
-  return {
-    ...payload,
-    ...(payload.checkInDate ? { checkInDate: normalizeIsoDate(payload.checkInDate) } : {}),
-    ...(payload.checkOutDate ? { checkOutDate: normalizeIsoDate(payload.checkOutDate) } : {}),
-  };
-}
 
 export function useOffers(params?: {
   page?: number;
@@ -49,6 +23,7 @@ export function useOffers(params?: {
         ...(params?.status && { status: params.status }),
         ...(params?.featured === true && { featured: "true" }),
       }),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -78,7 +53,7 @@ export function useCreateOffer() {
       const body = options?.forceCreate 
         ? { ...data, forceCreate: true }
         : data;
-      return apiPost<Offer>("/offers", normalizeOfferDates(body));
+      return apiPost<Offer>("/offers", body);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["offers"] }); },
   });
@@ -88,7 +63,7 @@ export function useUpdateOffer(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: UpdateOfferPayload) =>
-      apiPatch<Offer>(`/offers/${id}`, normalizeOfferDates(data)),
+      apiPatch<Offer>(`/offers/${id}`, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["offers"] });
       qc.invalidateQueries({ queryKey: ["offer", id] });
