@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
+import { clearReferenceCache } from "@/hooks/use-reference-data";
 import type { Hotel, PaginatedResponse } from "@/types/api";
 
 export function useHotels(params?: {
@@ -49,6 +50,8 @@ export function useCreateHotel() {
     mutationFn: (data: Partial<Hotel>) => apiPost<Hotel>("/hotels", data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["hotels"] });
+      clearReferenceCache("hotels");
+      qc.invalidateQueries({ queryKey: ["ref_hotels"] });
     },
   });
 }
@@ -61,6 +64,8 @@ export function useUpdateHotel(id: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["hotels"] });
       qc.invalidateQueries({ queryKey: ["hotel", id] });
+      clearReferenceCache("hotels");
+      qc.invalidateQueries({ queryKey: ["ref_hotels"] });
     },
   });
 }
@@ -71,6 +76,8 @@ export function useDeleteHotel() {
     mutationFn: (id: string) => apiDelete(`/hotels/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["hotels"] });
+      clearReferenceCache("hotels");
+      qc.invalidateQueries({ queryKey: ["ref_hotels"] });
     },
   });
 }

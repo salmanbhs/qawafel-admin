@@ -32,9 +32,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { OfferDuplicateConfirmationDialog, type DuplicateOfferData } from "./OfferDuplicateConfirmationDialog";
-import { cn } from "@/lib/utils";
-import { useHotels } from "@/hooks/use-hotels";
-import { useDestinations } from "@/hooks/use-destinations";
+import { cn, arabicCommandFilter } from "@/lib/utils";
+import { useReferenceDestinations, useReferenceHotels } from "@/hooks/use-reference-data";
+import { RefreshButton } from "@/components/shared/RefreshButton";
 import { useAgency } from "@/hooks/use-agencies";
 import { usePreUploadImage, useDeletePreUploadImage } from "@/hooks/use-offers";
 import { getApiErrorMessage } from "@/lib/api";
@@ -261,8 +261,7 @@ export function OfferForm({
   });
 
   //  derived 
-  const { data: destData, isLoading: destsLoading } = useDestinations({ limit: 100 });
-  const allDestinations = destData?.data ?? [];
+  const { destinations: allDestinations, isLoading: destsLoading, refresh: refreshDests, cooldownKey: destCooldownKey, isRefetching: destsRefetching } = useReferenceDestinations();
 
   const watchedDestinations = useWatch({ control: form.control, name: "destinations" });
   const selectedDestIds = (watchedDestinations || []).map((d) => d.destinationId);
@@ -300,12 +299,10 @@ export function OfferForm({
     }
   }, [watchedCheckInDate, watchedNumberOfDays, form]);
 
-  const { data: hotelsData, isLoading: hotelsLoading } = useHotels({
-    travelAgencyId,
-    limit: 100,
-    ...(hasDestinations ? { destinationIds: selectedDestIds } : {}),
-  });
-  const hotels = hotelsData?.data ?? [];
+  const { allHotels, isLoading: hotelsLoading, refresh: refreshHotels, cooldownKey: hotelCooldownKey, isRefetching: hotelsRefetching } = useReferenceHotels();
+  const hotels = hasDestinations
+    ? allHotels.filter((h) => selectedDestIds.includes(h.destinationId))
+    : allHotels;
 
   //  image 
   const handleImageUpload = async (files: FileList | null) => {
@@ -693,7 +690,10 @@ export function OfferForm({
           return (
             <FormItem>
               <div className="flex items-center justify-between mb-2">
-                <FormLabel>{t("destinations")}</FormLabel>
+                <div className="flex items-center gap-2">
+                  <FormLabel>{t("destinations")}</FormLabel>
+                  <RefreshButton cooldownKey={destCooldownKey} onRefresh={refreshDests} isRefetching={destsRefetching} />
+                </div>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="sm" disabled={destsLoading} className="gap-1.5">
@@ -703,7 +703,7 @@ export function OfferForm({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[360px] p-0" align="end">
-                    <Command>
+                    <Command filter={arabicCommandFilter}>
                       <CommandInput placeholder={t("searchDestinations")} />
                       <CommandList>
                         <CommandEmpty>{tc("noResults")}</CommandEmpty>
@@ -792,7 +792,10 @@ export function OfferForm({
             };
             return (
               <FormItem>
-                <FormLabel>{t("hotels")}</FormLabel>
+                <div className="flex items-center gap-2">
+                  <FormLabel>{t("hotels")}</FormLabel>
+                  <RefreshButton cooldownKey={hotelCooldownKey} onRefresh={refreshHotels} isRefetching={hotelsRefetching} />
+                </div>
                 <div className="text-xs text-muted-foreground mb-2">{t("hotelsFilteredByDestination")}</div>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -810,7 +813,7 @@ export function OfferForm({
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-[400px] p-0" align="start" side="top" sideOffset={8}>
-                    <Command>
+                    <Command filter={arabicCommandFilter}>
                       <CommandInput placeholder={t("searchHotels")} />
                       <CommandList>
                         <CommandEmpty>{tc("noResults")}</CommandEmpty>

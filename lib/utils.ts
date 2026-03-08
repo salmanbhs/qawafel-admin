@@ -5,6 +5,28 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Normalize Arabic text for search comparison.
+ * أ/إ/آ → ا, ة → ه, ى → ي, strips diacritics (tashkeel).
+ */
+export function normalizeArabic(text: string): string {
+  return text
+    .replace(/[\u0610-\u061A\u064B-\u065F\u0670]/g, "") // strip tashkeel
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي");
+}
+
+/**
+ * Custom cmdk filter with Arabic normalization.
+ * Returns 1 (match) or 0 (no match).
+ */
+export function arabicCommandFilter(value: string, search: string): number {
+  const normalizedValue = normalizeArabic(value).toLowerCase();
+  const normalizedSearch = normalizeArabic(search).toLowerCase();
+  return normalizedValue.includes(normalizedSearch) ? 1 : 0;
+}
+
 export function formatDate(date: string | Date, locale = "ar") {
   return new Intl.DateTimeFormat(locale === "ar" ? "ar-BH" : "en-GB", {
     year: "numeric",

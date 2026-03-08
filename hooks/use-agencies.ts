@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiPatch, apiDelete, apiPostForm } from "@/lib/api";
+import { clearReferenceCache } from "@/hooks/use-reference-data";
 import type {
   TravelAgency,
   PaginatedResponse,
@@ -35,6 +36,8 @@ export function useCreateAgency() {
       apiPost<TravelAgency>("/travel-agencies", data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agencies"] });
+      clearReferenceCache("agencies");
+      qc.invalidateQueries({ queryKey: ["ref_agencies"] });
     },
   });
 }
@@ -47,6 +50,8 @@ export function useUpdateAgency(id: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agencies"] });
       qc.invalidateQueries({ queryKey: ["agency", id] });
+      clearReferenceCache("agencies");
+      qc.invalidateQueries({ queryKey: ["ref_agencies"] });
     },
   });
 }
@@ -57,6 +62,8 @@ export function useDeleteAgency() {
     mutationFn: (id: string) => apiDelete(`/travel-agencies/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agencies"] });
+      clearReferenceCache("agencies");
+      qc.invalidateQueries({ queryKey: ["ref_agencies"] });
     },
   });
 }

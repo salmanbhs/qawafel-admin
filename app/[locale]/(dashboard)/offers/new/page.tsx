@@ -25,10 +25,11 @@ import {
 } from "@/components/ui/command";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateOffer } from "@/hooks/use-offers";
-import { useAgencies } from "@/hooks/use-agencies";
+import { useReferenceAgencies } from "@/hooks/use-reference-data";
+import { RefreshButton } from "@/components/shared/RefreshButton";
 import { useAuthStore } from "@/store/auth.store";
 import { getApiErrorMessage } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, arabicCommandFilter } from "@/lib/utils";
 import type { OfferFormValues } from "@/components/offers/OfferForm";
 
 const OfferForm = dynamic(() => import("@/components/offers/OfferForm").then(mod => ({ default: mod.OfferForm })), {
@@ -56,10 +57,7 @@ export default function NewOfferPage() {
   );
   const [agencyPickerOpen, setAgencyPickerOpen] = useState(false);
 
-  const { data: agenciesData, isLoading: agenciesLoading } = useAgencies({
-    limit: 100,
-  });
-  const agencies = agenciesData?.data ?? [];
+  const { agencies, isLoading: agenciesLoading, refresh: refreshAgencies, cooldownKey: agencyCooldownKey, isRefetching: agenciesRefetching } = useReferenceAgencies();
 
   const createOffer = useCreateOffer();
 
@@ -148,6 +146,7 @@ export default function NewOfferPage() {
             <CardTitle className="text-base flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               {locale === "ar" ? "اختر الوكالة" : "Select Agency"}
+              <RefreshButton cooldownKey={agencyCooldownKey} onRefresh={refreshAgencies} isRefetching={agenciesRefetching} />
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -171,7 +170,7 @@ export default function NewOfferPage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                  <Command>
+                  <Command filter={arabicCommandFilter}>
                     <CommandInput placeholder={locale === "ar" ? "ابحث عن وكالة..." : "Search agencies..."} />
                     <CommandList>
                       <CommandEmpty>
@@ -183,7 +182,7 @@ export default function NewOfferPage() {
                           return (
                             <CommandItem
                               key={a.id}
-                              value={label}
+                              value={`${a.nameAr ?? ""} ${a.nameEn ?? ""} ${a.name ?? ""}`}
                               onSelect={() => {
                                 setSelectedAgencyId(a.id);
                                 setAgencyPickerOpen(false);

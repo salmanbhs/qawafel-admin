@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch, apiDelete, apiPostForm } from "@/lib/api";
+import { clearReferenceCache } from "@/hooks/use-reference-data";
 import type { Destination, PaginatedResponse, DestinationImageUploadResponse } from "@/types/api";
 
 export function useDestinations(params?: { page?: number; limit?: number; enabled?: boolean }) {
@@ -27,7 +28,11 @@ export function useCreateDestination() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: Partial<Destination>) => apiPost<Destination>("/destinations", data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["destinations"] }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["destinations"] });
+      clearReferenceCache("destinations");
+      qc.invalidateQueries({ queryKey: ["ref_destinations"] });
+    },
   });
 }
 
@@ -38,6 +43,8 @@ export function useUpdateDestination(id: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["destinations"] });
       qc.invalidateQueries({ queryKey: ["destination", id] });
+      clearReferenceCache("destinations");
+      qc.invalidateQueries({ queryKey: ["ref_destinations"] });
     },
   });
 }
@@ -48,6 +55,8 @@ export function useDeleteDestination() {
     mutationFn: (id: string) => apiDelete(`/destinations/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["destinations"] });
+      clearReferenceCache("destinations");
+      qc.invalidateQueries({ queryKey: ["ref_destinations"] });
     },
   });
 }

@@ -52,8 +52,7 @@ import {
   useArchiveOffer, 
   useUnarchiveOffer 
 } from "@/hooks/use-offers";
-import { useAgencies } from "@/hooks/use-agencies";
-import { useDestinations } from "@/hooks/use-destinations";
+import { useReferenceAgencies, useReferenceDestinations } from "@/hooks/use-reference-data";
 import { usePackages } from "@/hooks/use-packages";
 import { useAuthStore } from "@/store/auth.store";
 import { formatDate, formatCurrency } from "@/lib/utils";
@@ -131,10 +130,8 @@ export default function OffersPage() {
     );
   }, [allOffers, search]);
 
-  const { data: agenciesData } = useAgencies({ limit: 100 });
-  const agencies = agenciesData?.data ?? [];
-  const { data: destsData } = useDestinations({ limit: 100 });
-  const destinations = destsData?.data ?? [];
+  const { agencies } = useReferenceAgencies();
+  const { destinations } = useReferenceDestinations();
   const { data: packagesData } = usePackages({ limit: 100 });
   const packagesList = packagesData?.data ?? [];
 
