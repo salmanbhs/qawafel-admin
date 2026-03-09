@@ -1052,13 +1052,13 @@ export function OfferForm({
                       <div className="grid gap-2 sm:grid-cols-2">
                         <div>
                           <label className="text-xs text-muted-foreground mb-1 block">{t("fromLocation")}</label>
-                          <Input className="h-8 text-sm" value={tr.fromLocation}
+                          <Input className="h-8 text-sm" value={tr.fromLocation || ""}
                             onChange={(e) => updateTransport(idx, { fromLocation: e.target.value })}
                             placeholder={t("fromLocationPlaceholder")} />
                         </div>
                         <div>
                           <label className="text-xs text-muted-foreground mb-1 block">{t("toLocation")}</label>
-                          <Input className="h-8 text-sm" value={tr.toLocation}
+                          <Input className="h-8 text-sm" value={tr.toLocation || ""}
                             onChange={(e) => updateTransport(idx, { toLocation: e.target.value })}
                             placeholder={t("toLocationPlaceholder")} />
                         </div>

@@ -17,6 +17,8 @@ import {
   X,
   ShieldCheck,
   Briefcase,
+  Instagram,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
@@ -118,6 +120,16 @@ export function Sidebar({ onClose }: SidebarProps) {
       href: `/${locale}/admin/audit-logs`,
       label: t("auditLogs"),
       icon: ClipboardList,
+    },
+    {
+      href: `/${locale}/instagram`,
+      label: t("instagramImports"),
+      icon: Instagram,
+    },
+    {
+      href: `/${locale}/instagram/accounts`,
+      label: t("monitoredAccounts"),
+      icon: Eye,
     },
   ];
 

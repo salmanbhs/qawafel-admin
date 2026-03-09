@@ -428,3 +428,103 @@ export interface PackageImageUploadResponse {
   iconImageUrl?: string;
   bannerImageUrl?: string;
 }
+
+// ─── Instagram Import Types ──────────────────────────────────────────────────
+
+export type InstagramImportStatus = "NEW" | "OFFER_CREATED" | "DISMISSED";
+
+export interface InstagramPaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface InstagramMonitoredAccount {
+  id: string;
+  travelAgencyId: string;
+  instagramUsername: string;
+  isEnabled: boolean;
+  pollingIntervalMinutes: number;
+  lastPolledAt: string | null;
+  lastPostShortcode: string | null;
+  createdAt: string;
+  updatedAt: string;
+  travelAgency?: {
+    id: string;
+    name?: string;
+    nameAr?: string;
+    nameEn?: string;
+  };
+  _count?: { imports: number };
+}
+
+export interface InstagramImport {
+  id: string;
+  travelAgencyId: string;
+  instagramMonitoredAccountId: string;
+  instagramPostShortcode: string;
+  instagramPostUrl: string;
+  instagramCaption: string | null;
+  imageUrl: string | null;
+  supabaseStoragePath: string | null;
+  rawOcrText: string | null;
+  ocrLanguage: string | null;
+  ocrConfidence: number | null;
+  extractedData: string | null;
+  extractedNameAr: string | null;
+  extractedNameEn: string | null;
+  extractedCheckInDate: string | null;
+  extractedCheckOutDate: string | null;
+  extractedNumberOfDays: number | null;
+  extractedPrice: number | { s: number; e: number; d: number[] } | null;
+  extractedCurrency: string | null;
+  extractedDestination: string | null;
+  extractedHotelName: string | null;
+  status: InstagramImportStatus;
+  offerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  travelAgency?: {
+    id: string;
+    name?: string;
+    nameAr?: string;
+    nameEn?: string;
+  };
+  monitoredAccount?: {
+    id: string;
+    instagramUsername: string;
+  };
+  offer?: {
+    id: string;
+    name?: string;
+    nameAr?: string;
+    nameEn?: string;
+    status: string;
+  } | null;
+}
+
+export interface CreateMonitoredAccountPayload {
+  travelAgencyId: string;
+  instagramUsername: string;
+  isEnabled?: boolean;
+  pollingIntervalMinutes?: number;
+}
+
+export interface UpdateMonitoredAccountPayload {
+  isEnabled?: boolean;
+  pollingIntervalMinutes?: number;
+}
+
+export interface UpdateInstagramImportPayload {
+  extractedNameAr?: string;
+  extractedNameEn?: string;
+  extractedCheckInDate?: string;
+  extractedCheckOutDate?: string;
+  extractedNumberOfDays?: number;
+  extractedPrice?: number;
+  extractedCurrency?: string;
+  extractedDestination?: string;
+  extractedHotelName?: string;
+}

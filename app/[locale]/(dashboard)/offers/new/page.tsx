@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, Building2, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
@@ -25,22 +25,33 @@ import {
 } from "@/components/ui/command";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateOffer } from "@/hooks/use-offers";
+import { useInstagramImport } from "@/hooks/use-instagram-import";
 import { useReferenceAgencies } from "@/hooks/use-reference-data";
 import { RefreshButton } from "@/components/shared/RefreshButton";
 import { useAuthStore } from "@/store/auth.store";
 import { getApiErrorMessage } from "@/lib/api";
 import { cn, arabicCommandFilter } from "@/lib/utils";
 import type { OfferFormValues } from "@/components/offers/OfferForm";
+import type { Offer } from "@/types/api";
 
 const OfferForm = dynamic(() => import("@/components/offers/OfferForm").then(mod => ({ default: mod.OfferForm })), {
   ssr: false,
   loading: () => <Skeleton className="h-96 w-full" />,
 });
 
+/** Prisma Decimal comes as {s,e,d[]} — normalise to plain number. */
+function toNumber(v: number | { s: number; e: number; d: number[] } | null | undefined): number | null {
+  if (v == null) return null;
+  if (typeof v === "number") return v;
+  if (typeof v === "object" && Array.isArray(v.d)) return v.s * v.d[0];
+  return null;
+}
+
 export default function NewOfferPage() {
   const t = useTranslations("offers");
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isRtl = locale === "ar";
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
 
@@ -51,11 +62,39 @@ export default function NewOfferPage() {
     user?.role === "TRAVEL_AGENCY_STAFF";
   const myAgencyId = user?.travelAgencyId ?? undefined;
 
+  // Instagram import prefill
+  const instagramImportId = searchParams.get("instagramImportId");
+  const { data: importData } = useInstagramImport(instagramImportId || "");
+
   // For agency users, agency is fixed. For system admin, they pick one.
   const [selectedAgencyId, setSelectedAgencyId] = useState<string>(
     isAgencyRole && myAgencyId ? myAgencyId : ""
   );
   const [agencyPickerOpen, setAgencyPickerOpen] = useState(false);
+
+  // Auto-select agency from instagram import data
+  useEffect(() => {
+    if (isAdmin && importData?.travelAgencyId && !selectedAgencyId) {
+      setSelectedAgencyId(importData.travelAgencyId);
+    }
+  }, [isAdmin, importData?.travelAgencyId, selectedAgencyId]);
+
+  // Build defaultValues from instagram import
+  const importDefaults: Partial<Offer> | undefined = importData ? (() => {
+    const price = toNumber(importData.extractedPrice);
+    return {
+      nameAr: importData.extractedNameAr || undefined,
+      nameEn: importData.extractedNameEn || undefined,
+      imageUrl: importData.imageUrl || undefined,
+      checkInDate: importData.extractedCheckInDate || undefined,
+      checkOutDate: importData.extractedCheckOutDate || undefined,
+      numberOfDays: importData.extractedNumberOfDays || undefined,
+      currency: importData.extractedCurrency || "BHD",
+      ...(price != null ? {
+        roomOptions: [{ roomType: null as any, price, isDefault: true }],
+      } : {}),
+    };
+  })() : undefined;
 
   const { agencies, isLoading: agenciesLoading, refresh: refreshAgencies, cooldownKey: agencyCooldownKey, isRefetching: agenciesRefetching } = useReferenceAgencies();
 
@@ -216,7 +255,9 @@ export default function NewOfferPage() {
           </CardHeader>
           <CardContent>
             <OfferForm
+              key={instagramImportId && importData ? instagramImportId : "new"}
               travelAgencyId={resolvedAgencyId || ""}
+              defaultValues={importDefaults}
               onSubmit={handleSubmit}
               onSubmitAndContinue={handleSubmitAndContinue}
               isLoading={createOffer.isPending}
