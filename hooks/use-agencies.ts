@@ -8,13 +8,16 @@ import type {
   AgencyImageUploadResponse,
 } from "@/types/api";
 
-export function useAgencies(params?: { page?: number; limit?: number; enabled?: boolean }) {
+export function useAgencies(params?: { page?: number; limit?: number; search?: string; phone?: string; instagram?: string; enabled?: boolean }) {
   return useQuery({
     queryKey: ["agencies", params],
     queryFn: () =>
       apiGet<PaginatedResponse<TravelAgency>>("/travel-agencies", {
         page: params?.page || 1,
         limit: params?.limit || 20,
+        ...(params?.search && { search: params.search }),
+        ...(params?.phone && { phone: params.phone }),
+        ...(params?.instagram && { instagram: params.instagram }),
       }),
     enabled: params?.enabled !== false, // Disable query by default if enabled is false
     placeholderData: keepPreviousData,

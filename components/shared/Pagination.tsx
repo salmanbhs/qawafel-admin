@@ -1,4 +1,4 @@
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -10,6 +10,7 @@ interface PaginationProps {
 
 export function Pagination({ page, totalPages, onPageChange }: PaginationProps) {
   const t = useTranslations("common");
+  const locale = useLocale();
   if (totalPages <= 1) return null;
 
   const handlePageChange = (newPage: number) => {
@@ -19,6 +20,10 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
     main?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const isRTL = locale === "ar";
+  const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
+  const NextIcon = isRTL ? ChevronLeft : ChevronRight;
+
   return (
     <div className="flex items-center justify-end gap-2 pt-4">
       <Button
@@ -27,7 +32,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
         onClick={() => handlePageChange(page - 1)}
         disabled={page <= 1}
       >
-        <ChevronRight className="h-4 w-4" />
+        <PrevIcon className="h-4 w-4" />
       </Button>
       <span className="text-sm text-[hsl(var(--muted-foreground))]">
         {t("page")} {page} {t("of")} {totalPages}
@@ -38,7 +43,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
         onClick={() => handlePageChange(page + 1)}
         disabled={page >= totalPages}
       >
-        <ChevronLeft className="h-4 w-4" />
+        <NextIcon className="h-4 w-4" />
       </Button>
     </div>
   );
