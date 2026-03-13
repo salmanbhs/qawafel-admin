@@ -75,7 +75,7 @@ export default function AgenciesPage() {
   });
   const deleteAgency = useDeleteAgency();
   const agencies = data?.data ?? [];
-  const totalPages = data?.pagination?.pages ?? 1;
+  const totalPages = data?.meta?.totalPages ?? 1;
 
   async function handleDelete(id: string) {
     try {
