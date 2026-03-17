@@ -15,6 +15,7 @@ import type {
 export function useMonitoredAccounts(params?: {
   page?: number;
   limit?: number;
+  search?: string;
   travelAgencyId?: string;
   isEnabled?: boolean;
 }) {
@@ -24,6 +25,7 @@ export function useMonitoredAccounts(params?: {
       apiGet<InstagramPaginatedResponse<InstagramMonitoredAccount>>("/instagram-import/accounts", {
         page: params?.page || 1,
         limit: params?.limit || 20,
+        ...(params?.search && { search: params.search }),
         ...(params?.travelAgencyId && { travelAgencyId: params.travelAgencyId }),
         ...(params?.isEnabled !== undefined && { isEnabled: String(params.isEnabled) }),
       }),

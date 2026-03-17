@@ -1,20 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus, Pencil, Trash2, Hotel, Eye, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, Hotel, Eye, Star, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Pagination } from "@/components/shared/Pagination";
 import { useHotels, useDeleteHotel } from "@/hooks/use-hotels";
-import { useAuthStore } from "@/store/auth.store";
+import { useDestinations } from "@/hooks/use-destinations";
 import { formatDate } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api";
 
@@ -23,16 +38,30 @@ export default function HotelsPage() {
   const tc = useTranslations("common");
   const locale = useLocale();
   const [page, setPage] = useState(1);
-  const user = useAuthStore((s) => s.user);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [destinationId, setDestinationId] = useState("");
 
-  // TRAVEL_AGENCY_ADMIN only sees own hotels (backend handles scope),
-  // SYSTEM_ADMIN sees all
-  const { data, isLoading } = useHotels({ page, limit: 20 });
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const { data: destData } = useDestinations({ limit: 100 });
+  const destinations = destData?.data ?? [];
+
+  const { data, isLoading } = useHotels({
+    page,
+    limit: 20,
+    ...(search && { search }),
+    ...(destinationId && { destinationId }),
+  });
   const deleteHotel = useDeleteHotel();
   const hotels = data?.data ?? [];
-  const totalPages =
-    data?.meta?.totalPages ??
-    (data?.total ? Math.ceil(data.total / 20) : 1);
+  const totalPages = data?.pagination?.pages ?? 1;
 
   async function handleDelete(id: string) {
     try {
@@ -41,6 +70,15 @@ export default function HotelsPage() {
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     }
+  }
+
+  const hasActiveFilters = search || destinationId;
+
+  function clearFilters() {
+    setSearchInput("");
+    setSearch("");
+    setDestinationId("");
+    setPage(1);
   }
 
   return (
@@ -60,116 +98,163 @@ export default function HotelsPage() {
         </Link>
       </div>
 
+      {/* Filters */}
+      <div className="bg-[hsl(var(--muted)/0.3)] p-4 rounded-lg">
+        <div className="flex flex-wrap gap-3">
+          <Input
+            placeholder={locale === "ar" ? "البحث بالاسم..." : "Search by name..."}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="max-w-xs"
+          />
+          <Select
+            value={destinationId}
+            onValueChange={(val) => {
+              setDestinationId(val === "__all__" ? "" : val);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-52">
+              <SelectValue placeholder={locale === "ar" ? "كل الوجهات" : "All destinations"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">
+                {locale === "ar" ? "كل الوجهات" : "All destinations"}
+              </SelectItem>
+              {destinations.map((d) => (
+                <SelectItem key={d.id} value={d.id}>
+                  {d.nameAr || d.nameEn || d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <Button variant="outline" onClick={clearFilters} className="gap-2">
+              <X className="h-4 w-4" />
+              {locale === "ar" ? "مسح" : "Clear"}
+            </Button>
+          )}
+        </div>
+      </div>
+
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-52 rounded-lg" />
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 rounded" />
           ))}
         </div>
       ) : hotels.length === 0 ? (
         <EmptyState
           icon={Hotel}
-          title={t("noHotels")}
-          description={t("noHotelsDesc")}
+          title={hasActiveFilters ? tc("noResults") : t("noHotels")}
+          description={hasActiveFilters ? "" : t("noHotelsDesc")}
           action={
-            <Link href={`/${locale}/hotels/new`}>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                {t("create")}
-              </Button>
-            </Link>
+            !hasActiveFilters ? (
+              <Link href={`/${locale}/hotels/new`}>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  {t("create")}
+                </Button>
+              </Link>
+            ) : undefined
           }
         />
       ) : (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {hotels.map((hotel) => (
-              <Card
-                key={hotel.id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="text-base truncate">
-                        {hotel.nameAr || hotel.nameEn || hotel.name || "—"}
-                      </CardTitle>
-                      {hotel.nameEn && hotel.nameAr && (
-                        <p className="text-xs text-[hsl(var(--muted-foreground))] truncate mt-0.5">
-                          {hotel.nameEn}
-                        </p>
+        <div className="space-y-4">
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("nameAr")}</TableHead>
+                  <TableHead>{t("starRating")}</TableHead>
+                  <TableHead>{t("destination")}</TableHead>
+                  <TableHead>{t("agency")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                  <TableHead>{locale === "ar" ? "تاريخ الإنشاء" : "Created"}</TableHead>
+                  <TableHead className="text-right">{locale === "ar" ? "الإجراءات" : "Actions"}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {hotels.map((hotel) => (
+                  <TableRow key={hotel.id}>
+                    <TableCell className="font-medium max-w-xs">
+                      <div>
+                        <div className="truncate">
+                          {hotel.nameAr || hotel.nameEn || hotel.name || "—"}
+                        </div>
+                        {hotel.nameEn && hotel.nameAr && (
+                          <div className="text-xs text-[hsl(var(--muted-foreground))] truncate">
+                            {hotel.nameEn}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {hotel.starRating ? (
+                        <div className="flex items-center gap-0.5">
+                          {Array.from({ length: hotel.starRating }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400"
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-[hsl(var(--muted-foreground))]">—</span>
                       )}
-                    </div>
-                    <StatusBadge status={hotel.status} />
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {hotel.starRating && (
-                    <div className="flex items-center gap-1 mb-2">
-                      {Array.from({ length: hotel.starRating }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400"
+                    </TableCell>
+                    <TableCell className="text-sm text-[hsl(var(--muted-foreground))]">
+                      {hotel.destination?.city || "—"}
+                    </TableCell>
+                    <TableCell className="text-sm text-[hsl(var(--muted-foreground))] max-w-[160px]">
+                      <div className="truncate">
+                        {hotel.travelAgency
+                          ? hotel.travelAgency.nameAr ||
+                            hotel.travelAgency.nameEn ||
+                            hotel.travelAgency.name ||
+                            "—"
+                          : "—"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={hotel.status} />
+                    </TableCell>
+                    <TableCell className="text-sm text-[hsl(var(--muted-foreground))]">
+                      {formatDate(hotel.createdAt, locale)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link href={`/${locale}/hotels/${hotel.id}`}>
+                          <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                            <Eye className="h-3.5 w-3.5" />
+                            {locale === "ar" ? "عرض" : "View"}
+                          </Button>
+                        </Link>
+                        <Link href={`/${locale}/hotels/${hotel.id}/edit`}>
+                          <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </Link>
+                        <ConfirmDialog
+                          title={t("deleteConfirm")}
+                          description={t("deleteWarning")}
+                          onConfirm={() => handleDelete(hotel.id)}
+                          trigger={
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5 text-xs text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          }
                         />
-                      ))}
-                    </div>
-                  )}
-                  {hotel.destination?.city && (
-                    <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1 truncate">
-                      {hotel.destination.city}
-                    </p>
-                  )}
-                  {hotel.travelAgency && (
-                    <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1 truncate">
-                      {hotel.travelAgency.nameAr ||
-                        hotel.travelAgency.nameEn ||
-                        hotel.travelAgency.name}
-                    </p>
-                  )}
-                  <p className="text-xs text-[hsl(var(--muted-foreground))] mb-4">
-                    {formatDate(hotel.createdAt, locale)}
-                  </p>
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/${locale}/hotels/${hotel.id}`}
-                      className="flex-1"
-                    >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full gap-1.5 text-xs"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        {locale === "ar" ? "عرض" : "View"}
-                      </Button>
-                    </Link>
-                    <Link href={`/${locale}/hotels/${hotel.id}/edit`}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </Link>
-                    <ConfirmDialog
-                      title={t("deleteConfirm")}
-                      description={t("deleteWarning")}
-                      onConfirm={() => handleDelete(hotel.id)}
-                      trigger={
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5 text-xs text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      }
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
 
           {totalPages > 1 && (
@@ -179,7 +264,7 @@ export default function HotelsPage() {
               onPageChange={setPage}
             />
           )}
-        </>
+        </div>
       )}
     </div>
   );

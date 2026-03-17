@@ -45,7 +45,7 @@ export function ArchivedOffersDialog({ isOpen, onOpenChange }: ArchivedOffersDia
   const { mutate: unarchive, isPending: isUnarchiving } = useUnarchiveOffer();
   const { mutate: deleteOffer, isPending: isDeleting } = useDeleteOffer();
 
-  const totalPages = data?.meta?.totalPages ?? 1;
+  const totalPages = data?.pagination?.pages ?? 1;
   const offers = data?.data ?? [];
 
   const handleUnarchive = (offer: Offer) => {

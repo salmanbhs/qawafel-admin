@@ -28,9 +28,7 @@ export default function PackagesPage() {
   const { data, isLoading } = usePackages({ page, limit: 20 });
   const deletePackage = useDeletePackage();
   const packages = data?.data ?? [];
-  const totalPages =
-    data?.meta?.totalPages ??
-    (data?.total ? Math.ceil(data.total / 20) : 1);
+  const totalPages = data?.pagination?.pages ?? 1;
 
   async function handleDelete(id: string) {
     try {

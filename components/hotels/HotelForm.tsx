@@ -144,7 +144,7 @@ export function HotelForm({
       address: defaultValues?.address || "",
       googleMapUrl: defaultValues?.googleMapUrl || "",
       amenities: defaultValues?.amenities || "",
-      status: defaultValues?.status || undefined,
+      status: defaultValues?.status || "ACTIVE",
       destinationId: defaultValues?.destinationId || "",
     },
   });
@@ -315,25 +315,6 @@ export function HotelForm({
                   ))}
                 </SelectContent>
               </Select>
-              {(() => {
-                const selId = form.watch("destinationId");
-                const sel = destinations.find((d) => d.id === selId);
-                if (!sel) return null;
-                return (
-                  <div className="mt-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--muted))] px-3 py-2 text-sm space-y-0.5">
-                    {sel.city && (
-                      <p className="font-medium">
-                        {sel.city}
-                      </p>
-                    )}
-                    {sel.latitude != null && sel.longitude != null && (
-                      <p className="text-[hsl(var(--muted-foreground))]">
-                        {sel.latitude}, {sel.longitude}
-                      </p>
-                    )}
-                  </div>
-                );
-              })()}
               <FormMessage />
             </FormItem>
           )}

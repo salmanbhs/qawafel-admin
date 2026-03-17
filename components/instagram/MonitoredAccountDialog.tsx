@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -17,12 +17,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import {
   useMonitoredAccount,
   useCreateMonitoredAccount,
@@ -55,6 +62,7 @@ export function MonitoredAccountDialog({
   const [agencyId, setAgencyId] = useState("");
   const [isEnabled, setIsEnabled] = useState(true);
   const [pollingInterval, setPollingInterval] = useState(30);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   // Reset form when dialog opens or existing data loads
   useEffect(() => {
@@ -133,18 +141,51 @@ export function MonitoredAccountDialog({
           {/* Agency — only selectable on create */}
           <div>
             <Label>{t("agency")}</Label>
-            <Select value={agencyId} onValueChange={setAgencyId} disabled={isEditing}>
-              <SelectTrigger>
-                <SelectValue placeholder={t("selectAgency")} />
-              </SelectTrigger>
-              <SelectContent>
-                {agencies.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.nameAr || a.nameEn || a.name || "—"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={popoverOpen && !isEditing} onOpenChange={setPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  disabled={isEditing}
+                  className="w-full justify-between"
+                >
+                  {agencyId
+                    ? agencies.find((a) => a.id === agencyId)?.nameAr ||
+                      agencies.find((a) => a.id === agencyId)?.nameEn ||
+                      agencies.find((a) => a.id === agencyId)?.name
+                    : t("selectAgency")}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                  <CommandInput placeholder={tc("search")} />
+                  <CommandEmpty>{tc("noResults")}</CommandEmpty>
+                  <CommandList>
+                    <CommandGroup>
+                      {agencies.map((agency) => (
+                        <CommandItem
+                          key={agency.id}
+                          value={agency.id}
+                          onSelect={(currentValue) => {
+                            setAgencyId(currentValue === agencyId ? "" : currentValue);
+                            setPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              agencyId === agency.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {agency.nameAr || agency.nameEn || agency.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Polling interval */}

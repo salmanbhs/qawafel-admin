@@ -6,6 +6,7 @@ import type { Hotel, PaginatedResponse } from "@/types/api";
 export function useHotels(params?: {
   page?: number;
   limit?: number;
+  search?: string;
   travelAgencyId?: string;
   destinationId?: string;
   destinationIds?: string[];
@@ -19,6 +20,10 @@ export function useHotels(params?: {
         limit: params?.limit || 20,
       };
 
+      if (params?.search) {
+        queryParams.search = params.search;
+      }
+
       // Add single destinationId if provided
       if (params?.destinationId) {
         queryParams.destinationId = params.destinationId;
@@ -31,7 +36,7 @@ export function useHotels(params?: {
 
       return apiGet<PaginatedResponse<Hotel>>("/hotels", queryParams);
     },
-    enabled: params?.enabled !== false, // Disable query by default if enabled is false
+    enabled: params?.enabled !== false,
     placeholderData: keepPreviousData,
   });
 }
