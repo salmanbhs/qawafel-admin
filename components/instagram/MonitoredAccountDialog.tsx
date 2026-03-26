@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { Loader2, Check, ChevronsUpDown, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -53,7 +53,8 @@ export function MonitoredAccountDialog({
   const tc = useTranslations("common");
   const isEditing = !!accountId;
 
-  const { agencies } = useReferenceAgencies();
+  const { agencies, refresh: refreshAgencies, cooldownKey, isFetching: agenciesFetching } = useReferenceAgencies();
+  const [agencyCooldown, setAgencyCooldown] = useState(0); // seconds remaining
   const { data: existingAccount } = useMonitoredAccount(accountId ?? "");
   const createAccount = useCreateMonitoredAccount();
   const updateAccount = useUpdateMonitoredAccount(accountId ?? "");
@@ -63,6 +64,39 @@ export function MonitoredAccountDialog({
   const [isEnabled, setIsEnabled] = useState(true);
   const [pollingInterval, setPollingInterval] = useState(30);
   const [popoverOpen, setPopoverOpen] = useState(false);
+
+  // Initialise cooldown from localStorage when dialog opens
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const raw = localStorage.getItem(cooldownKey);
+      if (raw) {
+        const elapsed = Date.now() - (JSON.parse(raw) as number);
+        const remaining = Math.max(0, 5 * 60 * 1000 - elapsed);
+        setAgencyCooldown(Math.ceil(remaining / 1000));
+      } else {
+        setAgencyCooldown(0);
+      }
+    } catch {
+      setAgencyCooldown(0);
+    }
+  }, [open, cooldownKey]);
+
+  // Countdown tick
+  useEffect(() => {
+    if (agencyCooldown <= 0) return;
+    const id = setInterval(() => setAgencyCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [agencyCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleRefreshAgencies() {
+    const remaining = refreshAgencies();
+    if (remaining > 0) {
+      setAgencyCooldown(Math.ceil(remaining / 1000));
+    } else {
+      setAgencyCooldown(5 * 60); // 5-minute cooldown starts now
+    }
+  }
 
   // Reset form when dialog opens or existing data loads
   useEffect(() => {
@@ -140,7 +174,21 @@ export function MonitoredAccountDialog({
 
           {/* Agency — only selectable on create */}
           <div>
-            <Label>{t("agency")}</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label>{t("agency")}</Label>
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={handleRefreshAgencies}
+                  disabled={agencyCooldown > 0 || agenciesFetching}
+                  className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title={agencyCooldown > 0 ? `Wait ${agencyCooldown}s` : "Refresh agency list"}
+                >
+                  <RefreshCw className={`h-3 w-3 ${agenciesFetching ? "animate-spin" : ""}`} />
+                  {agencyCooldown > 0 ? `${agencyCooldown}s` : "Refresh"}
+                </button>
+              )}
+            </div>
             <Popover open={popoverOpen && !isEditing} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button

@@ -21,9 +21,11 @@ import { getInitials } from "@/lib/utils";
 
 interface HeaderProps {
   onMenuClick: () => void;
+  onDesktopMenuClick?: () => void;
+  desktopSidebarOpen?: boolean;
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header({ onMenuClick, onDesktopMenuClick, desktopSidebarOpen }: HeaderProps) {
   const t = useTranslations("nav");
   const locale = useLocale();
   const router = useRouter();
@@ -64,6 +66,18 @@ export function Header({ onMenuClick }: HeaderProps) {
       >
         <Menu className="h-5 w-5" />
       </Button>
+
+      {/* Desktop sidebar toggle — only visible when sidebar is closed */}
+      {!desktopSidebarOpen && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden lg:inline-flex"
+          onClick={onDesktopMenuClick}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />

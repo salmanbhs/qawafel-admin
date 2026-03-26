@@ -15,6 +15,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const { user, isLoading, accessToken, setAuth, clearAuth } = useAuthStore();
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -67,9 +68,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen overflow-hidden bg-[hsl(var(--background))]">
       <NavigationProgress />
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:flex-shrink-0">
-        <Sidebar />
-      </div>
+      {desktopSidebarOpen && (
+        <div className="hidden lg:flex lg:flex-shrink-0">
+          <Sidebar onClose={() => setDesktopSidebarOpen(false)} />
+        </div>
+      )}
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
@@ -86,7 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <Header onMenuClick={() => setSidebarOpen(true)} onDesktopMenuClick={() => setDesktopSidebarOpen(true)} desktopSidebarOpen={desktopSidebarOpen} />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {children}
         </main>
