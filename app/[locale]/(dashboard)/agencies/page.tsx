@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { Plus, Pencil, Trash2, Building2, X, ExternalLink } from "lucide-react";
@@ -29,7 +29,15 @@ export default function AgenciesPage() {
   const t = useTranslations("agencies");
   const tc = useTranslations("common");
   const locale = useLocale();
-  const [page, setPage] = useState(1);
+  // Restore page from sessionStorage when coming back from view/edit
+  const [page, setPage] = useState<number>(() => {
+    if (typeof window === "undefined") return 1;
+    try {
+      const raw = sessionStorage.getItem("agencies_list_state");
+      if (raw) return (JSON.parse(raw) as { page: number }).page ?? 1;
+    } catch {}
+    return 1;
+  });
   const [searchNameInput, setSearchNameInput] = useState("");
   const [searchPhoneInput, setSearchPhoneInput] = useState("");
   const [searchInstagramInput, setSearchInstagramInput] = useState("");
@@ -39,29 +47,38 @@ export default function AgenciesPage() {
   const [searchPhone, setSearchPhone] = useState("");
   const [searchInstagram, setSearchInstagram] = useState("");
 
-  // Debounce effect for name search
+  // Debounce effect for name search — only reset page when value actually changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      setSearchName(searchNameInput);
-      setPage(1);
+      setSearchName((prev) => {
+        if (prev === searchNameInput) return prev;
+        setPage(1);
+        return searchNameInput;
+      });
     }, 500);
     return () => clearTimeout(timer);
   }, [searchNameInput]);
 
-  // Debounce effect for phone search
+  // Debounce effect for phone search — only reset page when value actually changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      setSearchPhone(searchPhoneInput);
-      setPage(1);
+      setSearchPhone((prev) => {
+        if (prev === searchPhoneInput) return prev;
+        setPage(1);
+        return searchPhoneInput;
+      });
     }, 500);
     return () => clearTimeout(timer);
   }, [searchPhoneInput]);
 
-  // Debounce effect for instagram search
+  // Debounce effect for instagram search — only reset page when value actually changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      setSearchInstagram(searchInstagramInput);
-      setPage(1);
+      setSearchInstagram((prev) => {
+        if (prev === searchInstagramInput) return prev;
+        setPage(1);
+        return searchInstagramInput;
+      });
     }, 500);
     return () => clearTimeout(timer);
   }, [searchInstagramInput]);
@@ -76,6 +93,32 @@ export default function AgenciesPage() {
   const deleteAgency = useDeleteAgency();
   const agencies = data?.data ?? [];
   const totalPages = data?.pagination?.pages ?? 1;
+
+  // Scroll restoration — fires once after the restored page's data has loaded
+  const scrollRestoredRef = useRef(false);
+  useEffect(() => {
+    if (isLoading || scrollRestoredRef.current) return;
+    try {
+      const raw = sessionStorage.getItem("agencies_list_state");
+      if (!raw) return;
+      const { scrollY } = JSON.parse(raw) as { scrollY: number };
+      sessionStorage.removeItem("agencies_list_state");
+      scrollRestoredRef.current = true;
+      requestAnimationFrame(() => {
+        document.querySelector("main")?.scrollTo({ top: scrollY });
+      });
+    } catch {}
+  }, [isLoading]);
+
+  // Save current page + scroll position before navigating into an agency
+  function saveListState() {
+    try {
+      sessionStorage.setItem("agencies_list_state", JSON.stringify({
+        page,
+        scrollY: document.querySelector("main")?.scrollTop ?? 0,
+      }));
+    } catch {}
+  }
 
   async function handleDelete(id: string) {
     try {
@@ -215,12 +258,12 @@ export default function AgenciesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Link href={`/${locale}/agencies/${agency.id}`}>
+                        <Link href={`/${locale}/agencies/${agency.id}`} onClick={saveListState}>
                           <Button variant="outline" size="sm" className="text-xs">
                             {locale === "ar" ? "عرض" : "View"}
                           </Button>
                         </Link>
-                        <Link href={`/${locale}/agencies/${agency.id}/edit`}>
+                        <Link href={`/${locale}/agencies/${agency.id}/edit`} onClick={saveListState}>
                           <Button variant="outline" size="sm" className="gap-1.5">
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
