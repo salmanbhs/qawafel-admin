@@ -822,7 +822,7 @@ export function OfferForm({
                             const isSelected = selected.includes(h.id);
                             return (
                               <CommandItem key={h.id}
-                                value={`${h.nameAr} ${h.nameEn} ${h.destination?.city ?? ""}`}
+                                value={`${h.nameAr ?? ""} ${h.nameEn ?? ""} ${h.name ?? ""} ${h.destination?.city ?? ""}`}
                                 onSelect={() => toggleHotel(h.id)} className="flex items-center gap-2">
                                 <Check className={cn("h-4 w-4 shrink-0", isSelected ? "opacity-100" : "opacity-0")} />
                                 <span className="flex-1 truncate">{h.nameAr || h.nameEn || h.name}</span>
